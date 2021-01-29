@@ -15,7 +15,6 @@ import androidx.compose.material.Surface
 import androidx.compose.material.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -24,9 +23,6 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.platform.AmbientDensity
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.util.lerp
-import androidx.compose.ui.util.packFloats
-import androidx.compose.ui.util.unpackFloat1
-import androidx.compose.ui.util.unpackFloat2
 import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
 
@@ -125,10 +121,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
         var drawEnd: (@Composable () -> Unit)? = null
         val fadeFraction = thresholds.fade.applyTo(fraction)
         if (end != null && endInfo != null) {
-            val endAlpha = calculateAlpha(
-                direction, state.spec?.fadeMode,
-                false, 1 - fadeFraction
-            )
+            val endAlpha = calculateAlpha(direction, state.spec?.fadeMode, fadeFraction, false)
             if (endAlpha > 0) drawEnd = {
                 val endScale = calculateScale(end, start, 1 - scaleFraction).run {
                     if (fitMode == FitMode.Height) scaleY else scaleX
@@ -176,9 +169,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
             elevation = lerp(startInfo.elevation, endInfo.elevation, shapeFraction)
         }
 
-        val startAlpha = calculateAlpha(
-            direction, state.spec?.fadeMode, true, fadeFraction
-        )
+        val startAlpha = calculateAlpha(direction, state.spec?.fadeMode, fadeFraction, true)
 
         Surface(
             modifier = surfaceModifier,
@@ -301,37 +292,6 @@ enum class FitMode {
 }
 
 @Immutable
-inline class ProgressThresholds(private val packedValue: Long) {
-
-    @Stable
-    val start: Float
-        get() = unpackFloat1(packedValue)
-
-    @Stable
-    val end: Float
-        get() = unpackFloat2(packedValue)
-
-    @Suppress("NOTHING_TO_INLINE")
-    @Stable
-    inline operator fun component1(): Float = start
-
-    @Suppress("NOTHING_TO_INLINE")
-    @Stable
-    inline operator fun component2(): Float = end
-
-}
-
-@Stable
-fun ProgressThresholds(start: Float, end: Float) = ProgressThresholds(packFloats(start, end))
-
-@Stable
-private fun ProgressThresholds.applyTo(fraction: Float): Float = when {
-    fraction < start -> 0f
-    fraction in start..end -> (fraction - start) / (end - start)
-    else -> 1f
-}
-
-@Immutable
 private class ProgressThresholdsGroup(
     val fade: ProgressThresholds,
     val scale: ProgressThresholds,
@@ -380,12 +340,19 @@ class MaterialContainerTransformSpec(
     val fitMode: FitMode = FitMode.Auto,
     val startContainerColor: Color = Color.Transparent,
     val endContainerColor: Color = Color.Transparent,
-    val fadeProgressThresholds: ProgressThresholds? = null,
-    val scaleProgressThresholds: ProgressThresholds? = null,
+    fadeProgressThresholds: ProgressThresholds? = null,
+    scaleProgressThresholds: ProgressThresholds? = null,
     val scaleMaskProgressThresholds: ProgressThresholds? = null,
     val shapeMaskProgressThresholds: ProgressThresholds? = null
 ) : SharedElementsTransitionSpec(
-    pathMotionFactory, durationMillis, delayMillis, easing, direction, fadeMode
+    pathMotionFactory,
+    durationMillis,
+    delayMillis,
+    easing,
+    direction,
+    fadeMode,
+    fadeProgressThresholds,
+    scaleProgressThresholds
 )
 
 val DefaultMaterialContainerTransformSpec = MaterialContainerTransformSpec()

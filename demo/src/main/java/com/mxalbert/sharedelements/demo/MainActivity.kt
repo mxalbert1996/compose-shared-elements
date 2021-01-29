@@ -42,11 +42,12 @@ class MainActivity : AppCompatActivity() {
 
         private val FadeOutTransitionSpec = MaterialContainerTransformSpec(
             durationMillis = TransitionDurationMillis,
-            fadeMode = FadeMode.In
+            fadeMode = FadeMode.Out
         )
         private val CrossFadeTransitionSpec = SharedElementsTransitionSpec(
             durationMillis = TransitionDurationMillis,
-            fadeMode = FadeMode.Cross
+            fadeMode = FadeMode.Cross,
+            fadeProgressThresholds = ProgressThresholds(0.10f, 0.40f)
         )
         private val MaterialFadeInTransitionSpec = MaterialContainerTransformSpec(
             pathMotionFactory = MaterialArcMotionFactory,

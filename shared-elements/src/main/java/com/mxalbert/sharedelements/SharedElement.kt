@@ -32,10 +32,13 @@ fun SharedElement(
 @Composable
 private fun Placeholder(state: SharedElementsTransitionState) {
     with(AmbientDensity.current) {
-        var fraction = state.fraction
+        val fraction = state.fraction
         val startBounds = state.startBounds
         val endBounds = state.endBounds
-        val (startScaleX, startScaleY) = calculateScale(startBounds, endBounds, fraction)
+
+        val fadeFraction = state.spec?.fadeProgressThresholds?.applyTo(fraction) ?: fraction
+        val scaleFraction = state.spec?.scaleProgressThresholds?.applyTo(fraction) ?: fraction
+        val (startScaleX, startScaleY) = calculateScale(startBounds, endBounds, scaleFraction)
         val offset = calculateOffset(
             startBounds, endBounds,
             fraction, state.pathMotion,
@@ -49,11 +52,10 @@ private fun Placeholder(state: SharedElementsTransitionState) {
             scaleX: Float,
             scaleY: Float,
             isStart: Boolean,
-            fraction: Float,
             content: @Composable () -> Unit,
             zIndex: Float = 0f,
         ) {
-            val alpha = calculateAlpha(state.direction, state.spec?.fadeMode, isStart, fraction)
+            val alpha = calculateAlpha(state.direction, state.spec?.fadeMode, fadeFraction, isStart)
             if (alpha > 0) ambientValues.provided {
                 ElementContainer(
                     modifier = Modifier.size(
@@ -75,19 +77,20 @@ private fun Placeholder(state: SharedElementsTransitionState) {
         Container(
             state.startAmbientValues,
             startBounds,
-            startScaleX, startScaleY,
-            true, fraction,
+            startScaleX,
+            startScaleY,
+            true,
             state.startPlaceholder
         )
 
         if (endBounds != null) {
-            fraction = 1 - fraction
-            val (endScaleX, endScaleY) = calculateScale(endBounds, startBounds, fraction)
+            val (endScaleX, endScaleY) = calculateScale(endBounds, startBounds, 1 - scaleFraction)
             Container(
                 state.endAmbientValues!!,
                 endBounds,
-                endScaleX, endScaleY,
-                false, fraction,
+                endScaleX,
+                endScaleY,
+                false,
                 state.endPlaceholder!!,
                 if (state.spec?.fadeMode == FadeMode.Out) -1f else 0f
             )

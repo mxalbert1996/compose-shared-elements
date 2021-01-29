@@ -10,7 +10,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.App">
 
-        <activity android:name="com.mxalbert.sharedelements.MainActivity">
+        <activity android:name="com.mxalbert.sharedelements.demo.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

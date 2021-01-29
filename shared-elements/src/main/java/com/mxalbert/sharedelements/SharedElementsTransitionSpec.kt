@@ -10,7 +10,9 @@ open class SharedElementsTransitionSpec(
     val delayMillis: Int = 0,
     val easing: Easing = FastOutSlowInEasing,
     val direction: TransitionDirection = TransitionDirection.Auto,
-    val fadeMode: FadeMode = FadeMode.Cross
+    val fadeMode: FadeMode = FadeMode.Cross,
+    val fadeProgressThresholds: ProgressThresholds? = null,
+    val scaleProgressThresholds: ProgressThresholds? = null
 )
 
 val DefaultSharedElementsTransitionSpec = SharedElementsTransitionSpec()

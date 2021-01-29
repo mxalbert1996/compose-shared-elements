@@ -18,20 +18,19 @@ internal fun calculateDirection(start: Rect, end: Rect): TransitionDirection =
 internal fun calculateAlpha(
     direction: TransitionDirection?,
     fadeMode: FadeMode?,
-    isStart: Boolean,
-    fraction: Float
+    fraction: Float,  // Absolute
+    isStart: Boolean
 ) = when (fadeMode) {
-    FadeMode.In -> if (isStart) 1f else 1 - fraction
+    FadeMode.In, null -> if (isStart) 1f else fraction
     FadeMode.Out -> if (isStart) 1 - fraction else 1f
-    FadeMode.Cross, null -> 1 - fraction
+    FadeMode.Cross -> if (isStart) 1 - fraction else fraction
     FadeMode.Through -> {
-        val actualFraction = if (isStart) fraction else 1 - fraction
         val threshold = if (direction == TransitionDirection.Enter)
             FadeThroughProgressThreshold else 1 - FadeThroughProgressThreshold
-        if (actualFraction < threshold) {
-            if (isStart) 1 - actualFraction / threshold else 0f
+        if (fraction < threshold) {
+            if (isStart) 1 - fraction / threshold else 0f
         } else {
-            if (isStart) 0f else 1 - fraction / (1 - threshold)
+            if (isStart) 0f else (fraction - threshold) / (1 - threshold)
         }
     }
 }
@@ -39,7 +38,7 @@ internal fun calculateAlpha(
 internal fun calculateOffset(
     start: Rect,
     end: Rect?,
-    fraction: Float,
+    fraction: Float,  // Relative
     pathMotion: PathMotion?,
     width: Float
 ): Offset = if (end == null) start.topLeft else {
@@ -56,6 +55,6 @@ private val Identity = ScaleFactor(1f, 1f)
 internal fun calculateScale(
     start: Rect,
     end: Rect?,
-    fraction: Float
+    fraction: Float  // Relative
 ): ScaleFactor =
     if (end == null) Identity else lerp(Identity, end.size / start.size, fraction)
