@@ -1,6 +1,6 @@
 # Shared Elements Transition for Jetpack Compose
 
-Originated from [mobnetic/compose-shared-element](/mobnetic/compose-shared-element).
+Originated from [mobnetic/compose-shared-element](https://github.com/mobnetic/compose-shared-element).
 
 Shared elements transition implementation for compose with various customization options.
 Currently providing the following transition patterns:
