@@ -184,6 +184,7 @@ class MainActivity : AppCompatActivity() {
                         ) {
                             Image(
                                 vectorResource(id = user.avatar),
+                                contentDescription = user.name,
                                 modifier = Modifier.fillMaxWidth(),
                                 contentScale = ContentScale.Crop
                             )
@@ -214,6 +215,7 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         Image(
                             vectorResource(id = user.avatar),
+                            contentDescription = user.name,
                             modifier = Modifier.fillMaxWidth()
                                 .clickable(enabled = !scope.isRunningTransition) { changeUser(null) },
                             contentScale = ContentScale.Crop
@@ -262,6 +264,7 @@ class MainActivity : AppCompatActivity() {
                         ) {
                             Image(
                                 vectorResource(id = user.avatar),
+                                contentDescription = user.name,
                                 modifier = Modifier.preferredSize(48.dp),
                                 contentScale = ContentScale.Crop
                             )
@@ -298,6 +301,7 @@ class MainActivity : AppCompatActivity() {
             ) {
                 Image(
                     vectorResource(id = user.avatar),
+                    contentDescription = user.name,
                     modifier = Modifier.preferredSize(200.dp)
                         .clickable(enabled = !scope.isRunningTransition) { changeUser(null) },
                     contentScale = ContentScale.Crop

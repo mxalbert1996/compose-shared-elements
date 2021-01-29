@@ -49,8 +49,10 @@ internal fun BaseSharedElement(
 
     content(modifierWithOnPositioned)
 
-    onDispose {
-        rootState.onElementDisposed(elementInfo)
+    DisposableEffect(elementInfo) {
+        onDispose {
+            rootState.onElementDisposed(elementInfo)
+        }
     }
 }
 
@@ -69,8 +71,10 @@ fun SharedElementsRoot(
         SharedElementTransitionsOverlay(rootState)
     }
 
-    onDispose {
-        rootState.onDispose()
+    DisposableEffect(Unit) {
+        onDispose {
+            rootState.onDispose()
+        }
     }
 }
 
@@ -81,7 +85,7 @@ interface SharedElementsRootScope {
 
 @Composable
 private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) {
-    rootState.invalidateTransitionsOverlay = invalidate
+    rootState.recomposeScope = currentRecomposeScope
     rootState.trackers.values.forEach { tracker ->
         when (val transition = tracker.transition) {
             is WaitingForEndElementPosition -> {
@@ -154,7 +158,7 @@ private class SharedElementsRootState {
     private val choreographer = ChoreographerWrapper()
     val scope = Scope()
     val trackers = mutableMapOf<Any, SharedElementsTracker>()
-    var invalidateTransitionsOverlay: () -> Unit = {}
+    var recomposeScope: RecomposeScope? = null
     var rootCoordinates: LayoutCoordinates? = null
 
     fun onElementRegistered(elementInfo: SharedElementInfo): Boolean {
@@ -195,7 +199,7 @@ private class SharedElementsRootState {
     private fun getTracker(elementInfo: SharedElementInfo): SharedElementsTracker {
         return trackers.getOrPut(elementInfo.key) {
             SharedElementsTracker { transition ->
-                invalidateTransitionsOverlay()
+                recomposeScope?.invalidate()
                 scope.isRunningTransition = if (transition != null) true else
                     trackers.values.any { it.transition != null }
             }
@@ -204,8 +208,8 @@ private class SharedElementsRootState {
 
     private fun calculateElementBoundsInRoot(elementCoordinates: LayoutCoordinates): Rect =
         Rect(
-            rootCoordinates?.childToLocal(elementCoordinates, Offset.Zero)
-                ?: elementCoordinates.positionInRoot, elementCoordinates.size.toSize()
+            rootCoordinates?.localPositionOf(elementCoordinates, Offset.Zero)
+                ?: elementCoordinates.positionInRoot(), elementCoordinates.size.toSize()
         )
 
     private inner class Scope : SharedElementsRootScope {

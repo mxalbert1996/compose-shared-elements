@@ -14,8 +14,8 @@ android {
         applicationId = "com.mxalbert.sharedelements.demo"
         minSdkVersion(Versions.Sdk.Min)
         targetSdkVersion(Versions.Sdk.Target)
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = Versions.Project.Code
+        versionName = Versions.Project.Name
     }
 
     buildTypes {
