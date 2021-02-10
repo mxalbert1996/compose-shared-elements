@@ -3,7 +3,7 @@ package com.mxalbert.sharedelements.demo
 import android.os.Bundle
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.animation.*
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -23,12 +23,10 @@ import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.mxalbert.sharedelements.*
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 class MainActivity : AppCompatActivity() {
 
     private data class User(@DrawableRes val avatar: Int, val name: String)
@@ -38,7 +36,6 @@ class MainActivity : AppCompatActivity() {
         private const val DetailsScreen = "details"
 
         private const val TransitionDurationMillis = 1000
-        private val ZeroOffset: (IntSize) -> IntOffset = { IntOffset.Zero }
 
         private val FadeOutTransitionSpec = MaterialContainerTransformSpec(
             durationMillis = TransitionDurationMillis,
@@ -58,11 +55,6 @@ class MainActivity : AppCompatActivity() {
             pathMotionFactory = MaterialArcMotionFactory,
             durationMillis = TransitionDurationMillis,
             fadeMode = FadeMode.Out
-        )
-
-        private fun hold(): ExitTransition = slideOut(
-            ZeroOffset,
-            tween(durationMillis = TransitionDurationMillis)
         )
     }
 
@@ -130,8 +122,9 @@ class MainActivity : AppCompatActivity() {
     private fun changeUser(user: User?) {
         val currentUser = selectedUser
         if (currentUser != user) {
-            if (currentUser != null) {
-                scope.prepareTransition(currentUser.avatar, currentUser.name)
+            val targetUser = user ?: currentUser
+            if (targetUser != null) {
+                scope.prepareTransition(targetUser.avatar, targetUser.name)
             }
             selectedUser = user
         }
@@ -143,18 +136,12 @@ class MainActivity : AppCompatActivity() {
             scope = this
             val user = selectedUser
             val listState = rememberLazyListState()
-            AnimatedVisibility(
-                visible = user == null,
-                enter = slideIn(ZeroOffset),  // No animation visually
-                exit = hold()
-            ) {
+
+            DelayExit(visible = user == null) {
                 UserCardsScreen(listState)
             }
-            AnimatedVisibility(
-                visible = user != null,
-                enter = fadeIn(animSpec = tween(durationMillis = TransitionDurationMillis)),
-                exit = fadeOut(animSpec = tween(durationMillis = TransitionDurationMillis))
-            ) {
+
+            DelayExit(visible = user != null) {
                 val currentUser = remember { user!! }
                 UserCardDetailsScreen(currentUser)
             }
@@ -201,12 +188,14 @@ class MainActivity : AppCompatActivity() {
 
     @Composable
     private fun UserCardDetailsScreen(user: User) {
+        val (fraction, setFraction) = remember { mutableStateOf(1f) }
         // Scrim color
-        Surface(color = Color.Black.copy(alpha = 0.32f)) {
+        Surface(color = Color.Black.copy(alpha = 0.32f * (1 - fraction))) {
             SharedMaterialContainer(
                 key = user.name,
                 screenKey = DetailsScreen,
-                transitionSpec = MaterialFadeOutTransitionSpec
+                transitionSpec = MaterialFadeOutTransitionSpec,
+                onFractionChanged = setFraction
             ) {
                 Surface {
                     Column(
