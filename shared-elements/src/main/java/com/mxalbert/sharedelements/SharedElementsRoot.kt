@@ -30,7 +30,6 @@ internal fun BaseSharedElement(
     val (savedShouldHide, setShouldHide) = remember { mutableStateOf(false) }
     val rootState = AmbientSharedElementsRootState.current
     val shouldHide = rootState.onElementRegistered(elementInfo)
-    // State values do not change during composition
     setShouldHide(shouldHide)
 
     val ambientValues = ambientValues
@@ -96,21 +95,9 @@ private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) 
                 val endElement = transition.endElement
                 val spec = startElement.info.spec
                 val animated = animatedFloat(0f)
-                if (transition.animatedFloat == null) {
-                    transition.animatedFloat = animated
-                    animated.animateTo(
-                        targetValue = 1f,
-                        anim = tween(
-                            durationMillis = spec.durationMillis,
-                            delayMillis = spec.delayMillis,
-                            easing = spec.easing
-                        ),
-                        onEnd = { _, _ ->
-                            transition.onTransitionFinished()
-                        }
-                    )
-                }
                 val fraction = animated.value
+                startElement.info.onFractionChanged?.invoke(fraction)
+                endElement.info.onFractionChanged?.invoke(1 - fraction)
 
                 val direction = remember {
                     val direction = spec.direction
@@ -119,6 +106,24 @@ private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) 
                 }
 
                 startElement.Placeholder(fraction, endElement, direction, spec, tracker.pathMotion)
+
+                if (transition.animatedFloat == null) {
+                    transition.animatedFloat = animated
+                    // Start animation after first composition
+                    rootState.choreographer.postCallback(endElement.info) {
+                        animated.animateTo(
+                            targetValue = 1f,
+                            anim = tween(
+                                durationMillis = spec.durationMillis,
+                                delayMillis = spec.delayMillis,
+                                easing = spec.easing
+                            ),
+                            onEnd = { _, _ ->
+                                transition.onTransitionFinished()
+                            }
+                        )
+                    }
+                }
             }
         }
     }
@@ -155,7 +160,7 @@ private val AmbientSharedElementsRootState = staticAmbientOf<SharedElementsRootS
 }
 
 private class SharedElementsRootState {
-    private val choreographer = ChoreographerWrapper()
+    val choreographer = ChoreographerWrapper()
     val scope = Scope()
     val trackers = mutableMapOf<Any, SharedElementsTracker>()
     var recomposeScope: RecomposeScope? = null
@@ -386,7 +391,8 @@ internal val TopLeft = TransformOrigin(0f, 0f)
 internal open class SharedElementInfo(
     val key: Any,
     val screenKey: Any,
-    val spec: SharedElementsTransitionSpec
+    val spec: SharedElementsTransitionSpec,
+    val onFractionChanged: ((Float) -> Unit)?
 ) {
 
     final override fun equals(other: Any?): Boolean =

@@ -36,12 +36,13 @@ fun SharedMaterialContainer(
     border: BorderStroke? = null,
     elevation: Dp = 0.dp,
     transitionSpec: MaterialContainerTransformSpec = DefaultMaterialContainerTransformSpec,
+    onFractionChanged: ((Float) -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     val elementInfo = MaterialContainerInfo(
         key, screenKey, shape, color, contentColor,
-        border, elevation, transitionSpec
+        border, elevation, transitionSpec, onFractionChanged
     )
     val realPlaceholder = placeholder ?: content
     BaseSharedElement(
@@ -284,8 +285,9 @@ private class MaterialContainerInfo(
     val contentColor: Color,
     val border: BorderStroke?,
     val elevation: Dp,
-    spec: SharedElementsTransitionSpec
-) : SharedElementInfo(key, screenKey, spec)
+    spec: SharedElementsTransitionSpec,
+    onFractionChanged: ((Float) -> Unit)?,
+) : SharedElementInfo(key, screenKey, spec, onFractionChanged)
 
 enum class FitMode {
     Auto, Width, Height

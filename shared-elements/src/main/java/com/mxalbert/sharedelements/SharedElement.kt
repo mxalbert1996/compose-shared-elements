@@ -16,10 +16,13 @@ fun SharedElement(
     key: Any,
     screenKey: Any,
     transitionSpec: SharedElementsTransitionSpec = DefaultSharedElementsTransitionSpec,
+    onFractionChanged: ((Float) -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    val elementInfo = remember(key, screenKey) { SharedElementInfo(key, screenKey, transitionSpec) }
+    val elementInfo = remember(key, screenKey, transitionSpec, onFractionChanged) {
+        SharedElementInfo(key, screenKey, transitionSpec, onFractionChanged)
+    }
     val realPlaceholder = placeholder ?: content
     BaseSharedElement(
         elementInfo,
