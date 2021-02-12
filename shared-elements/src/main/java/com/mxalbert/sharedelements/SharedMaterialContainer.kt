@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.platform.AmbientDensity
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.zIndex
@@ -65,7 +65,7 @@ fun SharedMaterialContainer(
 
 @Composable
 private fun Placeholder(state: SharedElementsTransitionState) {
-    with(AmbientDensity.current) {
+    with(LocalDensity.current) {
         val startInfo = state.startInfo as MaterialContainerInfo
         val direction = state.direction
         val spec = state.spec as? MaterialContainerTransformSpec
@@ -236,31 +236,31 @@ private fun lerp(start: Shape, end: Shape, fraction: Float): Shape {
         (start != RectangleShape && start !is CornerBasedShape) ||
         (end != RectangleShape && end !is CornerBasedShape)
     ) return start
-    val topLeft = lerp(
-        (start as? CornerBasedShape)?.topLeft,
-        (end as? CornerBasedShape)?.topLeft,
+    val topStart = lerp(
+        (start as? CornerBasedShape)?.topStart,
+        (end as? CornerBasedShape)?.topStart,
         fraction
     ) ?: ZeroCornerSize
-    val topRight = lerp(
-        (start as? CornerBasedShape)?.topRight,
-        (end as? CornerBasedShape)?.topRight,
+    val topEnd = lerp(
+        (start as? CornerBasedShape)?.topEnd,
+        (end as? CornerBasedShape)?.topEnd,
         fraction
     ) ?: ZeroCornerSize
-    val bottomRight = lerp(
-        (start as? CornerBasedShape)?.bottomRight,
-        (end as? CornerBasedShape)?.bottomRight,
+    val bottomEnd = lerp(
+        (start as? CornerBasedShape)?.bottomEnd,
+        (end as? CornerBasedShape)?.bottomEnd,
         fraction
     ) ?: ZeroCornerSize
-    val bottomLeft = lerp(
-        (start as? CornerBasedShape)?.bottomLeft,
-        (end as? CornerBasedShape)?.bottomLeft,
+    val bottomStart = lerp(
+        (start as? CornerBasedShape)?.bottomStart,
+        (end as? CornerBasedShape)?.bottomStart,
         fraction
     ) ?: ZeroCornerSize
     return when {
         start is RoundedCornerShape || (start == RectangleShape && end is RoundedCornerShape) ->
-            RoundedCornerShape(topLeft, topRight, bottomRight, bottomLeft)
+            RoundedCornerShape(topStart, topEnd, bottomEnd, bottomStart)
         start is CutCornerShape || (start == RectangleShape && end is CutCornerShape) ->
-            CutCornerShape(topLeft, topRight, bottomRight, bottomLeft)
+            CutCornerShape(topStart, topEnd, bottomEnd, bottomStart)
         else -> start
     }
 }

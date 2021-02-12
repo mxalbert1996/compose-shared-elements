@@ -1,8 +1,7 @@
 package com.mxalbert.sharedelements
 
 import android.view.Choreographer
-import androidx.compose.animation.animatedFloat
-import androidx.compose.animation.core.AnimatedFloat
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
@@ -18,6 +17,7 @@ import androidx.compose.ui.unit.toSize
 import com.mxalbert.sharedelements.SharedElementTransition.InProgress
 import com.mxalbert.sharedelements.SharedElementTransition.WaitingForEndElementPosition
 import com.mxalbert.sharedelements.SharedElementsTracker.State.*
+import kotlinx.coroutines.launch
 import kotlin.properties.Delegates
 
 @Composable
@@ -28,15 +28,15 @@ internal fun BaseSharedElement(
     content: @Composable (Modifier) -> Unit
 ) {
     val (savedShouldHide, setShouldHide) = remember { mutableStateOf(false) }
-    val rootState = AmbientSharedElementsRootState.current
+    val rootState = LocalSharedElementsRootState.current
     val shouldHide = rootState.onElementRegistered(elementInfo)
     setShouldHide(shouldHide)
 
-    val ambientValues = ambientValues
+    val compositionLocalValues = compositionLocalValues
     val modifierWithOnPositioned = Modifier.onGloballyPositioned { coordinates ->
         rootState.onElementPositioned(
             elementInfo,
-            ambientValues,
+            compositionLocalValues,
             placeholder,
             overlay,
             coordinates,
@@ -64,7 +64,7 @@ fun SharedElementsRoot(
     Box(modifier = Modifier.onGloballyPositioned { layoutCoordinates ->
         rootState.rootCoordinates = layoutCoordinates
     }) {
-        Providers(AmbientSharedElementsRootState provides rootState) {
+        Providers(LocalSharedElementsRootState provides rootState) {
             rootState.scope.content()
         }
         SharedElementTransitionsOverlay(rootState)
@@ -94,7 +94,7 @@ private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) 
                 val startElement = transition.startElement
                 val endElement = transition.endElement
                 val spec = startElement.info.spec
-                val animated = animatedFloat(0f)
+                val animated = remember { Animatable(0f) }
                 val fraction = animated.value
                 startElement.info.onFractionChanged?.invoke(fraction)
                 endElement.info.onFractionChanged?.invoke(1 - fraction)
@@ -107,21 +107,22 @@ private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) 
 
                 startElement.Placeholder(fraction, endElement, direction, spec, tracker.pathMotion)
 
-                if (transition.animatedFloat == null) {
-                    transition.animatedFloat = animated
+                val scope = rememberCoroutineScope()
+                if (!transition.isAnimating) {
+                    transition.isAnimating = true
                     // Start animation after first composition
                     rootState.choreographer.postCallback(endElement.info) {
-                        animated.animateTo(
-                            targetValue = 1f,
-                            anim = tween(
-                                durationMillis = spec.durationMillis,
-                                delayMillis = spec.delayMillis,
-                                easing = spec.easing
-                            ),
-                            onEnd = { _, _ ->
-                                transition.onTransitionFinished()
-                            }
-                        )
+                        scope.launch {
+                            animated.animateTo(
+                                targetValue = 1f,
+                                animationSpec = tween(
+                                    durationMillis = spec.durationMillis,
+                                    delayMillis = spec.delayMillis,
+                                    easing = spec.easing
+                                )
+                            )
+                            transition.onTransitionFinished()
+                        }
                     }
                 }
             }
@@ -142,11 +143,11 @@ private fun PositionedSharedElement.Placeholder(
             fraction = fraction,
             startInfo = info,
             startBounds = bounds,
-            startAmbientValues = ambientValues,
+            startCompositionLocalValues = compositionLocalValues,
             startPlaceholder = placeholder,
             endInfo = end?.info,
             endBounds = end?.bounds,
-            endAmbientValues = end?.ambientValues,
+            endCompositionLocalValues = end?.compositionLocalValues,
             endPlaceholder = end?.placeholder,
             direction = direction,
             spec = spec,
@@ -155,7 +156,7 @@ private fun PositionedSharedElement.Placeholder(
     )
 }
 
-private val AmbientSharedElementsRootState = staticAmbientOf<SharedElementsRootState> {
+private val LocalSharedElementsRootState = staticCompositionLocalOf<SharedElementsRootState> {
     error("SharedElementsRoot not found. SharedElement must be hosted in SharedElementsRoot.")
 }
 
@@ -173,7 +174,7 @@ private class SharedElementsRootState {
 
     fun onElementPositioned(
         elementInfo: SharedElementInfo,
-        ambientValues: AmbientValues,
+        compositionLocalValues: CompositionLocalValues,
         placeholder: @Composable () -> Unit,
         overlay: @Composable (SharedElementsTransitionState) -> Unit,
         coordinates: LayoutCoordinates,
@@ -181,7 +182,7 @@ private class SharedElementsRootState {
     ) {
         val element = PositionedSharedElement(
             info = elementInfo,
-            ambientValues = ambientValues,
+            compositionLocalValues = compositionLocalValues,
             placeholder = placeholder,
             overlay = overlay,
             bounds = calculateElementBoundsInRoot(coordinates)
@@ -375,11 +376,11 @@ internal class SharedElementsTransitionState(
     val fraction: Float,
     val startInfo: SharedElementInfo,
     val startBounds: Rect,
-    val startAmbientValues: AmbientValues,
+    val startCompositionLocalValues: CompositionLocalValues,
     val startPlaceholder: @Composable () -> Unit,
     val endInfo: SharedElementInfo?,
     val endBounds: Rect?,
-    val endAmbientValues: AmbientValues?,
+    val endCompositionLocalValues: CompositionLocalValues?,
     val endPlaceholder: (@Composable () -> Unit)?,
     val direction: TransitionDirection?,
     val spec: SharedElementsTransitionSpec?,
@@ -404,7 +405,7 @@ internal open class SharedElementInfo(
 
 private class PositionedSharedElement(
     val info: SharedElementInfo,
-    val ambientValues: AmbientValues,
+    val compositionLocalValues: CompositionLocalValues,
     val placeholder: @Composable () -> Unit,
     val overlay: @Composable (SharedElementsTransitionState) -> Unit,
     val bounds: Rect
@@ -420,7 +421,7 @@ private sealed class SharedElementTransition(val startElement: PositionedSharedE
         val endElement: PositionedSharedElement,
         val onTransitionFinished: () -> Unit
     ) : SharedElementTransition(startElement) {
-        var animatedFloat: AnimatedFloat? = null
+        var isAnimating = false
     }
 }
 

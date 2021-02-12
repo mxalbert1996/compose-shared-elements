@@ -1,6 +1,7 @@
 package com.mxalbert.sharedelements.demo
 
 import android.os.Bundle
+import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.Crossfade
@@ -14,19 +15,18 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.savedinstancestate.savedInstanceState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.setContent
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mxalbert.sharedelements.*
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 class MainActivity : AppCompatActivity() {
 
     private data class User(@DrawableRes val avatar: Int, val name: String)
@@ -82,11 +82,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
+        setContent(null) {
             MaterialTheme(
                 colors = if (isSystemInDarkTheme()) darkColors() else lightColors()
             ) {
-                var useCards by savedInstanceState { true }
+                var useCards by rememberSaveable { mutableStateOf(true) }
                 Scaffold(
                     topBar = {
                         TopAppBar(
@@ -170,7 +170,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         ) {
                             Image(
-                                vectorResource(id = user.avatar),
+                                painterResource(id = user.avatar),
                                 contentDescription = user.name,
                                 modifier = Modifier.fillMaxWidth(),
                                 contentScale = ContentScale.Crop
@@ -203,7 +203,7 @@ class MainActivity : AppCompatActivity() {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
-                            vectorResource(id = user.avatar),
+                            painterResource(id = user.avatar),
                             contentDescription = user.name,
                             modifier = Modifier.fillMaxWidth()
                                 .clickable(enabled = !scope.isRunningTransition) { changeUser(null) },
@@ -226,8 +226,8 @@ class MainActivity : AppCompatActivity() {
             scope = this
             val listState = rememberLazyListState()
             Crossfade(
-                current = selectedUser,
-                animation = tween(durationMillis = TransitionDurationMillis)
+                targetState = selectedUser,
+                animationSpec = tween(durationMillis = TransitionDurationMillis)
             ) { user ->
                 when (user) {
                     null -> UserListScreen(listState)
@@ -252,7 +252,7 @@ class MainActivity : AppCompatActivity() {
                             transitionSpec = FadeOutTransitionSpec
                         ) {
                             Image(
-                                vectorResource(id = user.avatar),
+                                painterResource(id = user.avatar),
                                 contentDescription = user.name,
                                 modifier = Modifier.preferredSize(48.dp),
                                 contentScale = ContentScale.Crop
@@ -289,7 +289,7 @@ class MainActivity : AppCompatActivity() {
                 transitionSpec = FadeOutTransitionSpec
             ) {
                 Image(
-                    vectorResource(id = user.avatar),
+                    painterResource(id = user.avatar),
                     contentDescription = user.name,
                     modifier = Modifier.preferredSize(200.dp)
                         .clickable(enabled = !scope.isRunningTransition) { changeUser(null) },

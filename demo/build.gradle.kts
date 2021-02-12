@@ -51,6 +51,7 @@ dependencies {
     implementation(project(":shared-elements"))
     implementation(Deps.AndroidX.Core)
     implementation(Deps.AndroidX.AppCompat)
+    implementation(Deps.AndroidX.Activity)
     implementation(Deps.Compose.Ui)
     implementation(Deps.Compose.Material)
 }

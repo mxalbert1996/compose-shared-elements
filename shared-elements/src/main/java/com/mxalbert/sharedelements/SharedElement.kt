@@ -7,7 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.AmbientDensity
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.zIndex
 
@@ -34,7 +34,7 @@ fun SharedElement(
 
 @Composable
 private fun Placeholder(state: SharedElementsTransitionState) {
-    with(AmbientDensity.current) {
+    with(LocalDensity.current) {
         val fraction = state.fraction
         val startBounds = state.startBounds
         val endBounds = state.endBounds
@@ -50,7 +50,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
 
         @Composable
         fun Container(
-            ambientValues: AmbientValues,
+            compositionLocalValues: CompositionLocalValues,
             bounds: Rect,
             scaleX: Float,
             scaleY: Float,
@@ -59,7 +59,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
             zIndex: Float = 0f,
         ) {
             val alpha = calculateAlpha(state.direction, state.spec?.fadeMode, fadeFraction, isStart)
-            if (alpha > 0) ambientValues.provided {
+            if (alpha > 0) compositionLocalValues.provided {
                 ElementContainer(
                     modifier = Modifier.size(
                         bounds.width.toDp(),
@@ -78,7 +78,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
         }
 
         Container(
-            state.startAmbientValues,
+            state.startCompositionLocalValues,
             startBounds,
             startScaleX,
             startScaleY,
@@ -89,7 +89,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
         if (endBounds != null) {
             val (endScaleX, endScaleY) = calculateScale(endBounds, startBounds, 1 - scaleFraction)
             Container(
-                state.endAmbientValues!!,
+                state.endCompositionLocalValues!!,
                 endBounds,
                 endScaleX,
                 endScaleY,
