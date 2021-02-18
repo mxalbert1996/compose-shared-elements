@@ -73,15 +73,16 @@ private fun Placeholder(state: SharedElementsTransitionState) {
         val end = state.endBounds
         val fraction = state.fraction
 
-        val fitMode = if (spec == null) null else remember {
+        val fitMode = if (spec == null || end == null) null else remember {
             val mode = spec.fitMode
             if (mode != FitMode.Auto) mode else
-                calculateFitMode(direction == TransitionDirection.Enter, start, end!!)
+                calculateFitMode(direction == TransitionDirection.Enter, start, end)
         }
 
-        val thresholds = if (spec == null) DefaultEnterThresholds else remember {
-            spec.progressThresholdsGroupFor(direction!!, state.pathMotion!!)
-        }
+        val thresholds =
+            if (spec == null || direction == null) DefaultEnterThresholds else remember {
+                spec.progressThresholdsGroupFor(direction, state.pathMotion!!)
+            }
 
         val scaleFraction = thresholds.scale.applyTo(fraction)
         val scale = calculateScale(start, end, scaleFraction)

@@ -86,43 +86,39 @@ interface SharedElementsRootScope {
 private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) {
     rootState.recomposeScope = currentRecomposeScope
     rootState.trackers.values.forEach { tracker ->
-        when (val transition = tracker.transition) {
-            is WaitingForEndElementPosition -> {
-                transition.startElement.Placeholder(0f)
+        val transition = tracker.transition
+        if (transition != null) {
+            val startElement = transition.startElement
+            val endElement = (transition as? InProgress)?.endElement
+            val spec = startElement.info.spec
+            val animated = remember { Animatable(0f) }
+            val fraction = animated.value
+            startElement.info.onFractionChanged?.invoke(fraction)
+            endElement?.info?.onFractionChanged?.invoke(1 - fraction)
+
+            val direction = if (endElement == null) null else remember {
+                val direction = spec.direction
+                if (direction != TransitionDirection.Auto) direction else
+                    calculateDirection(startElement.bounds, endElement.bounds)
             }
-            is InProgress -> {
-                val startElement = transition.startElement
-                val endElement = transition.endElement
-                val spec = startElement.info.spec
-                val animated = remember { Animatable(0f) }
-                val fraction = animated.value
-                startElement.info.onFractionChanged?.invoke(fraction)
-                endElement.info.onFractionChanged?.invoke(1 - fraction)
 
-                val direction = remember {
-                    val direction = spec.direction
-                    if (direction != TransitionDirection.Auto) direction else
-                        calculateDirection(startElement.bounds, endElement.bounds)
-                }
+            startElement.Placeholder(fraction, endElement, direction, spec, tracker.pathMotion)
 
-                startElement.Placeholder(fraction, endElement, direction, spec, tracker.pathMotion)
-
-                val scope = rememberCoroutineScope()
-                if (!transition.isAnimating) {
-                    transition.isAnimating = true
-                    // Start animation after first composition
-                    rootState.choreographer.postCallback(endElement.info) {
-                        scope.launch {
-                            animated.animateTo(
-                                targetValue = 1f,
-                                animationSpec = tween(
-                                    durationMillis = spec.durationMillis,
-                                    delayMillis = spec.delayMillis,
-                                    easing = spec.easing
-                                )
+            val scope = rememberCoroutineScope()
+            if (transition is InProgress && !transition.isAnimating) {
+                transition.isAnimating = true
+                // Start animation after first composition
+                rootState.choreographer.postCallback(transition.endElement.info) {
+                    scope.launch {
+                        animated.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(
+                                durationMillis = spec.durationMillis,
+                                delayMillis = spec.delayMillis,
+                                easing = spec.easing
                             )
-                            transition.onTransitionFinished()
-                        }
+                        )
+                        transition.onTransitionFinished()
                     }
                 }
             }

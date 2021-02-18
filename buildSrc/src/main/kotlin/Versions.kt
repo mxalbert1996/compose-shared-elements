@@ -1,7 +1,7 @@
 object Versions {
 
     object Project {
-        const val Name = "0.1.0-alpha11"
+        const val Name = "0.1.0-alpha12"
         const val Code = 1
     }
 
