@@ -24,7 +24,7 @@ internal inline class CompositionLocalValues(private val values: Array<ProvidedV
     @Composable
     @NonRestartableComposable
     fun provided(block: @Composable () -> Unit) {
-        Providers(*values, content = block)
+        CompositionLocalProvider(*values, content = block)
     }
 
 }

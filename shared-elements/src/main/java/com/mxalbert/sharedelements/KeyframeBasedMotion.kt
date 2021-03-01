@@ -11,7 +11,8 @@ abstract class KeyframeBasedMotion : PathMotion {
 
     protected abstract fun getKeyframes(start: Offset, end: Offset): Pair<FloatArray, LongArray>
 
-    private fun LongArray.getOffset(index: Int) = Offset(get(index))
+    private fun LongArray.getOffset(index: Int) =
+        @Suppress("INVISIBLE_MEMBER") Offset(get(index))
 
     override fun invoke(start: Offset, end: Offset, fraction: Float): Offset {
         var frac = fraction

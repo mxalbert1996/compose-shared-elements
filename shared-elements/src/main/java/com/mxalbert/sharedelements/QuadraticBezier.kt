@@ -66,6 +66,7 @@ internal object QuadraticBezier {
         val lengths = FloatArray(count)
         for (i in result.indices) {
             val point = cur.point
+            @Suppress("INVISIBLE_MEMBER")
             result[i] = point.packedValue
             if (i > 0) {
                 val distance = (point - last).getDistance()

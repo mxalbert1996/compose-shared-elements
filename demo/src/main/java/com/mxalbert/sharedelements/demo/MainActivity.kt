@@ -254,7 +254,7 @@ class MainActivity : AppCompatActivity() {
                             Image(
                                 painterResource(id = user.avatar),
                                 contentDescription = user.name,
-                                modifier = Modifier.preferredSize(48.dp),
+                                modifier = Modifier.size(48.dp),
                                 contentScale = ContentScale.Crop
                             )
                         }
@@ -291,7 +291,7 @@ class MainActivity : AppCompatActivity() {
                 Image(
                     painterResource(id = user.avatar),
                     contentDescription = user.name,
-                    modifier = Modifier.preferredSize(200.dp)
+                    modifier = Modifier.size(200.dp)
                         .clickable(enabled = !scope.isRunningTransition) { changeUser(null) },
                     contentScale = ContentScale.Crop
                 )

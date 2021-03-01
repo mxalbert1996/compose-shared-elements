@@ -64,7 +64,7 @@ fun SharedElementsRoot(
     Box(modifier = Modifier.onGloballyPositioned { layoutCoordinates ->
         rootState.rootCoordinates = layoutCoordinates
     }) {
-        Providers(LocalSharedElementsRootState provides rootState) {
+        CompositionLocalProvider(LocalSharedElementsRootState provides rootState) {
             rootState.scope.content()
         }
         SharedElementTransitionsOverlay(rootState)
