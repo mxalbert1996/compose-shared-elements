@@ -18,7 +18,6 @@ object Versions {
 
     object AndroidX {
         const val Core = "1.5.0-rc01"
-        const val AppCompat = "1.3.0-rc01"
         const val Activity = "1.3.0-alpha05"
     }
 

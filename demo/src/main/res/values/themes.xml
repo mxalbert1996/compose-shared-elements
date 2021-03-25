@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="Theme.App" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.App" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@color/purple_700</item>
     </style>
 

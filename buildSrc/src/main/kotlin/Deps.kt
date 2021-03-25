@@ -12,7 +12,6 @@ object Deps {
 
     object AndroidX {
         const val Core = "androidx.core:core-ktx:${Versions.AndroidX.Core}"
-        const val AppCompat = "androidx.appcompat:appcompat:${Versions.AndroidX.AppCompat}"
         const val Activity = "androidx.activity:activity-compose:${Versions.AndroidX.Activity}"
     }
 

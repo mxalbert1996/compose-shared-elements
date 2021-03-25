@@ -1,9 +1,9 @@
 package com.mxalbert.sharedelements.demo
 
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.mxalbert.sharedelements.*
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
     private data class User(@DrawableRes val avatar: Int, val name: String)
 
