@@ -10,7 +10,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.App">
 
-        <activity android:name="com.mxalbert.sharedelements.demo.MainActivity">
+        <activity
+            android:name="com.mxalbert.sharedelements.demo.MainActivity"
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
