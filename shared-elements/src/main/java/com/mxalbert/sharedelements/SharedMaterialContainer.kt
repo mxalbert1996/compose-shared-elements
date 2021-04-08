@@ -335,6 +335,11 @@ private val DefaultReturnThresholdsArc = ProgressThresholdsGroup(
 
 class MaterialContainerTransformSpec(
     pathMotionFactory: PathMotionFactory = LinearMotionFactory,
+    /**
+     * Frames to wait for before starting transition. Useful when the frame skip caused by
+     * rendering the new screen makes the animation not smooth.
+     */
+    waitForFrames: Int = 1,
     durationMillis: Int = AnimationConstants.DefaultDurationMillis,
     delayMillis: Int = 0,
     easing: Easing = FastOutSlowInEasing,
@@ -349,6 +354,7 @@ class MaterialContainerTransformSpec(
     val shapeMaskProgressThresholds: ProgressThresholds? = null
 ) : SharedElementsTransitionSpec(
     pathMotionFactory,
+    waitForFrames,
     durationMillis,
     delayMillis,
     easing,

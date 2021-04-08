@@ -107,19 +107,17 @@ private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) 
             val scope = rememberCoroutineScope()
             if (transition is InProgress && !transition.isAnimating) {
                 transition.isAnimating = true
-                // Start animation after first composition
-                rootState.choreographer.postCallback(transition.endElement.info) {
-                    scope.launch {
-                        animated.animateTo(
-                            targetValue = 1f,
-                            animationSpec = tween(
-                                durationMillis = spec.durationMillis,
-                                delayMillis = spec.delayMillis,
-                                easing = spec.easing
-                            )
+                scope.launch {
+                    repeat(spec.waitForFrames) { withFrameNanos {} }
+                    animated.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = spec.durationMillis,
+                            delayMillis = spec.delayMillis,
+                            easing = spec.easing
                         )
-                        transition.onTransitionFinished()
-                    }
+                    )
+                    transition.onTransitionFinished()
                 }
             }
         }
@@ -157,7 +155,7 @@ private val LocalSharedElementsRootState = staticCompositionLocalOf<SharedElemen
 }
 
 private class SharedElementsRootState {
-    val choreographer = ChoreographerWrapper()
+    private val choreographer = ChoreographerWrapper()
     val scope = Scope()
     val trackers = mutableMapOf<Any, SharedElementsTracker>()
     var recomposeScope: RecomposeScope? = null
