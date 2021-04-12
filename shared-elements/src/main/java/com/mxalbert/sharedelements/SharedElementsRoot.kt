@@ -17,8 +17,6 @@ import androidx.compose.ui.unit.toSize
 import com.mxalbert.sharedelements.SharedElementTransition.InProgress
 import com.mxalbert.sharedelements.SharedElementTransition.WaitingForEndElementPosition
 import com.mxalbert.sharedelements.SharedElementsTracker.State.*
-import kotlinx.coroutines.launch
-import kotlin.properties.Delegates
 
 @Composable
 internal fun BaseSharedElement(
@@ -85,39 +83,40 @@ interface SharedElementsRootScope {
 @Composable
 private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) {
     rootState.recomposeScope = currentRecomposeScope
-    rootState.trackers.values.forEach { tracker ->
-        val transition = tracker.transition
-        if (transition != null) {
-            val startElement = transition.startElement
-            val endElement = (transition as? InProgress)?.endElement
-            val spec = startElement.info.spec
-            val animated = remember { Animatable(0f) }
-            val fraction = animated.value
-            startElement.info.onFractionChanged?.invoke(fraction)
-            endElement?.info?.onFractionChanged?.invoke(1 - fraction)
+    rootState.trackers.forEach { (key, tracker) ->
+        key(key) {
+            val transition = tracker.transition
+            if (transition != null) {
+                val startElement = transition.startElement
+                val startScreenKey = startElement.info.screenKey
+                val endElement = (transition as? InProgress)?.endElement
+                val spec = startElement.info.spec
+                val animated = remember(startScreenKey) { Animatable(0f) }
+                val fraction = animated.value
+                startElement.info.onFractionChanged?.invoke(fraction)
+                endElement?.info?.onFractionChanged?.invoke(1 - fraction)
 
-            val direction = if (endElement == null) null else remember {
-                val direction = spec.direction
-                if (direction != TransitionDirection.Auto) direction else
-                    calculateDirection(startElement.bounds, endElement.bounds)
-            }
+                val direction = if (endElement == null) null else remember(startScreenKey) {
+                    val direction = spec.direction
+                    if (direction != TransitionDirection.Auto) direction else
+                        calculateDirection(startElement.bounds, endElement.bounds)
+                }
 
-            startElement.Placeholder(fraction, endElement, direction, spec, tracker.pathMotion)
+                startElement.Placeholder(fraction, endElement, direction, spec, tracker.pathMotion)
 
-            val scope = rememberCoroutineScope()
-            if (transition is InProgress && !transition.isAnimating) {
-                transition.isAnimating = true
-                scope.launch {
-                    repeat(spec.waitForFrames) { withFrameNanos {} }
-                    animated.animateTo(
-                        targetValue = 1f,
-                        animationSpec = tween(
-                            durationMillis = spec.durationMillis,
-                            delayMillis = spec.delayMillis,
-                            easing = spec.easing
+                if (transition is InProgress) {
+                    LaunchedEffect(transition, animated) {
+                        repeat(spec.waitForFrames) { withFrameNanos {} }
+                        animated.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(
+                                durationMillis = spec.durationMillis,
+                                delayMillis = spec.delayMillis,
+                                easing = spec.easing
+                            )
                         )
-                    )
-                    transition.onTransitionFinished()
+                        transition.onTransitionFinished()
+                    }
                 }
             }
         }
@@ -233,12 +232,15 @@ private class SharedElementsTracker(
 
     var pathMotion: PathMotion? = null
 
-    var transition by Delegates.observable<SharedElementTransition?>(null) { _, oldValue, newValue ->
-        if (oldValue != newValue) {
-            if (newValue == null) pathMotion = null
-            onTransitionChanged(newValue)
+    var transition: SharedElementTransition? = null
+        set(value) {
+            if (field != value) {
+                field = value
+                if (value == null) pathMotion = null
+                onTransitionChanged(value)
+            }
         }
-    }
+
 
     val isEmpty: Boolean get() = state is Empty
 
@@ -249,13 +251,21 @@ private class SharedElementsTracker(
     }
 
     fun prepareTransition() {
-        (state as? StartElementPositioned)?.apply {
-            prepareTransition()
-        }
+        (state as? StartElementPositioned)?.prepareTransition()
     }
 
     fun onElementRegistered(elementInfo: SharedElementInfo): Boolean {
         var shouldHide = false
+
+        val transition = transition
+        if (transition is InProgress
+            && elementInfo != transition.startElement.info
+            && elementInfo != transition.endElement.info
+        ) {
+            state = StartElementPositioned(startElement = transition.endElement)
+            this.transition = null
+        }
+
         when (val state = state) {
             is StartElementPositioned -> {
                 if (!state.isRegistered(elementInfo)) {
@@ -414,9 +424,8 @@ private sealed class SharedElementTransition(val startElement: PositionedSharedE
         startElement: PositionedSharedElement,
         val endElement: PositionedSharedElement,
         val onTransitionFinished: () -> Unit
-    ) : SharedElementTransition(startElement) {
-        var isAnimating = false
-    }
+    ) : SharedElementTransition(startElement)
+
 }
 
 private class ChoreographerWrapper {
