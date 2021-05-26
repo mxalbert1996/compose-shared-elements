@@ -15,6 +15,7 @@ import androidx.compose.material.Surface
 import androidx.compose.material.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -30,6 +31,7 @@ import kotlin.math.roundToInt
 fun SharedMaterialContainer(
     key: Any,
     screenKey: Any,
+    isFullscreen: Boolean = false,
     shape: Shape = RectangleShape,
     color: Color = MaterialTheme.colors.surface,
     contentColor: Color = contentColorFor(color),
@@ -47,6 +49,7 @@ fun SharedMaterialContainer(
     val realPlaceholder = placeholder ?: content
     BaseSharedElement(
         elementInfo,
+        isFullscreen,
         realPlaceholder,
         { Placeholder(it) },
         {
@@ -73,105 +76,165 @@ private fun Placeholder(state: SharedElementsTransitionState) {
         val end = state.endBounds
         val fraction = state.fraction
 
-        val fitMode = if (spec == null || end == null) null else remember {
-            val mode = spec.fitMode
-            if (mode != FitMode.Auto) mode else
-                calculateFitMode(direction == TransitionDirection.Enter, start, end)
-        }
-
-        val thresholds =
-            if (spec == null || direction == null) DefaultEnterThresholds else remember {
-                spec.progressThresholdsGroupFor(direction, state.pathMotion!!)
-            }
-
-        val scaleFraction = thresholds.scale.applyTo(fraction)
-        val scale = calculateScale(start, end, scaleFraction)
-        val contentScale = if (fitMode == FitMode.Height) scale.scaleY else scale.scaleX
-        val scaleMaskFraction = thresholds.scaleMask.applyTo(fraction)
-        val (containerWidth, containerHeight) = if (end == null) start.size * contentScale else {
-            if (fitMode == FitMode.Height) Size(
-                width = lerp(
-                    start.width * contentScale,
-                    start.height * contentScale / end.height * end.width,
-                    scaleMaskFraction
-                ),
-                height = start.height * contentScale
-            ) else Size(
-                width = start.width * contentScale,
-                height = lerp(
-                    start.height * contentScale,
-                    start.width * contentScale / end.width * end.height,
-                    scaleMaskFraction
-                )
-            )
-        }
-
-        val offset = calculateOffset(start, end, fraction, state.pathMotion, containerWidth).round()
-
-        val surfaceModifier = Modifier.size(
-            containerWidth.toDp(),
-            containerHeight.toDp()
-        ).offset { offset }
+        @Suppress("RedundantExplicitType")
+        var surfaceModifier: Modifier = Modifier
+        var startContentModifier = Fullscreen
+        val elements = mutableListOf<ElementCall>()
 
         var shape = startInfo.shape
         var color = startInfo.color
         var contentColor = startInfo.contentColor
         var border = startInfo.border
         var elevation = startInfo.elevation
+        var startAlpha = 1f
 
-        val endInfo = state.endInfo as? MaterialContainerInfo
-        var drawEnd: (@Composable () -> Unit)? = null
-        val fadeFraction = thresholds.fade.applyTo(fraction)
-        if (end != null && endInfo != null) {
-            val endAlpha = calculateAlpha(direction, state.spec?.fadeMode, fadeFraction, false)
-            if (endAlpha > 0) drawEnd = {
-                val endScale = calculateScale(end, start, 1 - scaleFraction).run {
-                    if (fitMode == FitMode.Height) scaleY else scaleX
-                }
-                val containerColor = spec?.endContainerColor ?: Color.Transparent
-                val containerModifier = Modifier.fillMaxSize().run {
-                    if (containerColor == Color.Transparent) this else
-                        background(containerColor.copy(alpha = containerColor.alpha * endAlpha))
-                }.run {
-                    if (state.spec?.fadeMode == FadeMode.Out) zIndex(-1f) else this
-                }
-                val contentModifier = Modifier.size(
-                    end.width.toDp(),
-                    end.height.toDp()
-                ).run {
-                    if (fitMode == FitMode.Height) offset {
-                        IntOffset(((containerWidth - end.width * endScale) / 2).roundToInt(), 0)
-                    } else this
-                }.graphicsLayer {
-                    this.transformOrigin = TopLeft
-                    this.scaleX = endScale
-                    this.scaleY = endScale
-                    this.alpha = endAlpha
-                }
-
-                ElementContainer(modifier = containerModifier, relaxMaxSize = true) {
-                    ElementContainer(
-                        modifier = contentModifier,
-                        content = state.endPlaceholder!!
-                    )
-                }
+        if (start != null) {
+            val fitMode = if (spec == null || end == null) null else remember {
+                val mode = spec.fitMode
+                if (mode != FitMode.Auto) mode else
+                    calculateFitMode(direction == TransitionDirection.Enter, start, end)
             }
 
-            val shapeFraction = thresholds.shapeMask.applyTo(fraction)
-            shape = lerp(startInfo.shape, endInfo.shape, shapeFraction)
-            color = lerp(startInfo.color, endInfo.color, shapeFraction)
-            contentColor = lerp(startInfo.contentColor, endInfo.contentColor, shapeFraction)
-            border = (startInfo.border ?: endInfo.border)?.copy(
-                width = lerp(
-                    startInfo.border?.width ?: 0.dp,
-                    endInfo.border?.width ?: 0.dp,
-                    shapeFraction
+            val thresholds =
+                if (spec == null || direction == null) DefaultEnterThresholds else remember {
+                    spec.progressThresholdsGroupFor(direction, state.pathMotion!!)
+                }
+
+            val scaleFraction = thresholds.scale.applyTo(fraction)
+            val scale = calculateScale(start, end, scaleFraction)
+            val contentScale = if (fitMode == FitMode.Height) scale.scaleY else scale.scaleX
+            val scaleMaskFraction = thresholds.scaleMask.applyTo(fraction)
+            val (containerWidth, containerHeight) = if (end == null) start.size * contentScale else {
+                if (fitMode == FitMode.Height) Size(
+                    width = lerp(
+                        start.width * contentScale,
+                        start.height * contentScale / end.height * end.width,
+                        scaleMaskFraction
+                    ),
+                    height = start.height * contentScale
+                ) else Size(
+                    width = start.width * contentScale,
+                    height = lerp(
+                        start.height * contentScale,
+                        start.width * contentScale / end.width * end.height,
+                        scaleMaskFraction
+                    )
                 )
-            )
-            elevation = lerp(startInfo.elevation, endInfo.elevation, shapeFraction)
+            }
+
+            val offset =
+                calculateOffset(start, end, fraction, state.pathMotion, containerWidth).round()
+
+            surfaceModifier = Modifier
+                .size(
+                    containerWidth.toDp(),
+                    containerHeight.toDp()
+                )
+                .offset { offset }
+
+            val endInfo = state.endInfo as? MaterialContainerInfo
+            val fadeFraction = thresholds.fade.applyTo(fraction)
+            if (end != null && endInfo != null) {
+                val endAlpha = calculateAlpha(direction, state.spec?.fadeMode, fadeFraction, false)
+                if (endAlpha > 0) {
+                    val endScale = calculateScale(end, start, 1 - scaleFraction).run {
+                        if (fitMode == FitMode.Height) scaleY else scaleX
+                    }
+                    val containerColor = spec?.endContainerColor ?: Color.Transparent
+                    val containerModifier = Modifier.fillMaxSize().run {
+                        if (containerColor == Color.Transparent) this else
+                            background(containerColor.copy(alpha = containerColor.alpha * endAlpha))
+                    }.run {
+                        if (state.spec?.fadeMode != FadeMode.Out) zIndex(1f) else this
+                    }
+                    val contentModifier = Modifier
+                        .size(
+                            end.width.toDp(),
+                            end.height.toDp()
+                        )
+                        .run {
+                            if (fitMode == FitMode.Height) offset {
+                                IntOffset(
+                                    ((containerWidth - end.width * endScale) / 2).roundToInt(),
+                                    0
+                                )
+                            } else this
+                        }
+                        .graphicsLayer {
+                            this.transformOrigin = TopLeft
+                            this.scaleX = endScale
+                            this.scaleY = endScale
+                            this.alpha = endAlpha
+                        }
+
+                    elements.add(
+                        ElementCall(
+                            endInfo.screenKey,
+                            containerModifier,
+                            true,
+                            contentModifier,
+                            state.endCompositionLocalValues!!,
+                            state.endPlaceholder!!
+                        )
+                    )
+                }
+
+                val shapeFraction = thresholds.shapeMask.applyTo(fraction)
+                shape = lerp(startInfo.shape, endInfo.shape, shapeFraction)
+                color = lerp(startInfo.color, endInfo.color, shapeFraction)
+                contentColor = lerp(startInfo.contentColor, endInfo.contentColor, shapeFraction)
+                border = (startInfo.border ?: endInfo.border)?.copy(
+                    width = lerp(
+                        startInfo.border?.width ?: 0.dp,
+                        endInfo.border?.width ?: 0.dp,
+                        shapeFraction
+                    )
+                )
+                elevation = lerp(startInfo.elevation, endInfo.elevation, shapeFraction)
+            }
+
+            startAlpha = calculateAlpha(direction, state.spec?.fadeMode, fadeFraction, true)
+            if (startAlpha > 0) {
+                startContentModifier = Modifier
+                    .size(
+                        start.width.toDp(),
+                        start.height.toDp()
+                    )
+                    .run {
+                        if (fitMode == FitMode.Height) offset {
+                            IntOffset(
+                                ((containerWidth - start.width * contentScale) / 2).roundToInt(),
+                                0
+                            )
+                        } else this
+                    }
+                    .graphicsLayer {
+                        this.transformOrigin = TopLeft
+                        this.scaleX = contentScale
+                        this.scaleY = contentScale
+                        this.alpha = startAlpha
+                    }
+            }
         }
 
-        val startAlpha = calculateAlpha(direction, state.spec?.fadeMode, fadeFraction, true)
+        if (startAlpha > 0) {
+            val containerColor = spec?.startContainerColor ?: Color.Transparent
+            val containerModifier = Modifier.fillMaxSize().run {
+                if (containerColor == Color.Transparent) this else
+                    background(containerColor.copy(alpha = containerColor.alpha * startAlpha))
+            }
+
+            elements.add(
+                ElementCall(
+                    startInfo.screenKey,
+                    containerModifier,
+                    start != null,
+                    startContentModifier,
+                    state.startCompositionLocalValues,
+                    state.startPlaceholder
+                )
+            )
+        }
 
         Surface(
             modifier = surfaceModifier,
@@ -182,42 +245,31 @@ private fun Placeholder(state: SharedElementsTransitionState) {
             elevation = elevation
         ) {
             Box {
-                if (startAlpha > 0) {
-                    val containerColor = spec?.startContainerColor ?: Color.Transparent
-                    val containerModifier = Modifier.fillMaxSize().run {
-                        if (containerColor == Color.Transparent) this else
-                            background(containerColor.copy(alpha = containerColor.alpha * startAlpha))
-                    }
-                    val contentModifier = Modifier.size(
-                        start.width.toDp(),
-                        start.height.toDp()
-                    ).run {
-                        if (fitMode == FitMode.Height) offset {
-                            IntOffset(
-                                ((containerWidth - start.width * contentScale) / 2).roundToInt(),
-                                0
-                            )
-                        } else this
-                    }.graphicsLayer {
-                        this.transformOrigin = TopLeft
-                        this.scaleX = contentScale
-                        this.scaleY = contentScale
-                        this.alpha = startAlpha
-                    }
-
-                    ElementContainer(modifier = containerModifier, relaxMaxSize = true) {
+                elements.forEach { call ->
+                    key(call.screenKey) {
                         ElementContainer(
-                            modifier = contentModifier,
-                            content = state.startPlaceholder
-                        )
+                            modifier = call.containerModifier,
+                            relaxMaxSize = call.relaxMaxSize
+                        ) {
+                            ElementContainer(modifier = call.contentModifier) {
+                                call.compositionLocalValues.Provider(call.content)
+                            }
+                        }
                     }
                 }
-
-                drawEnd?.invoke()
             }
         }
     }
 }
+
+private class ElementCall(
+    val screenKey: Any,
+    val containerModifier: Modifier,
+    val relaxMaxSize: Boolean,
+    val contentModifier: Modifier,
+    val compositionLocalValues: CompositionLocalValues,
+    val content: @Composable () -> Unit
+)
 
 private fun calculateFitMode(entering: Boolean, start: Rect, end: Rect): FitMode {
     val startWidth = start.width

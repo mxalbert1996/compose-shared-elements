@@ -50,7 +50,7 @@ internal fun calculateOffset(
     Offset(topCenter.x - width / 2, topCenter.y)
 }
 
-private val Identity = ScaleFactor(1f, 1f)
+internal val Identity = ScaleFactor(1f, 1f)
 
 internal fun calculateScale(
     start: Rect,

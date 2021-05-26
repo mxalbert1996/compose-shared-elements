@@ -21,3 +21,4 @@ Transition will start when elements with the same key are detected.
 * `SharedElementsTransitionSpec` of the start element will be used.
 * Transition is only applied to the shared elements, so you have to define the transition for the rest yourself. See the [demo](demo) for examples. If you want to prevent an element from showing in your self-defined transition, call `prepareTransition(key)`.
 * Elements are composed separately in an overlay during transition, so `remember` won't work as expected. If your element is stateful, define the state outside the `SharedElement` or `SharedMaterialContainer` composables.
+* If the element is full-screen (e.g. has `Modifier.fillMaxSize()`), specifying `isFullscreen = true` on it can greatly improve performance and allows you to use stateful composables.

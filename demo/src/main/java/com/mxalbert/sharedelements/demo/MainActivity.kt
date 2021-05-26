@@ -194,6 +194,7 @@ class MainActivity : ComponentActivity() {
             SharedMaterialContainer(
                 key = user.name,
                 screenKey = DetailsScreen,
+                isFullscreen = true,
                 transitionSpec = MaterialFadeOutTransitionSpec,
                 onFractionChanged = setFraction
             ) {
@@ -205,7 +206,8 @@ class MainActivity : ComponentActivity() {
                         Image(
                             painterResource(id = user.avatar),
                             contentDescription = user.name,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .clickable(enabled = !scope.isRunningTransition) { changeUser(null) },
                             contentScale = ContentScale.Crop
                         )
@@ -291,7 +293,8 @@ class MainActivity : ComponentActivity() {
                 Image(
                     painterResource(id = user.avatar),
                     contentDescription = user.name,
-                    modifier = Modifier.size(200.dp)
+                    modifier = Modifier
+                        .size(200.dp)
                         .clickable(enabled = !scope.isRunningTransition) { changeUser(null) },
                     contentScale = ContentScale.Crop
                 )

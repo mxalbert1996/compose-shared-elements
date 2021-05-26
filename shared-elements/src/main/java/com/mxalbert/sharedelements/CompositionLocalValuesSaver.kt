@@ -22,11 +22,10 @@ private val compositionLocalList = listOf(
 @Immutable
 internal value class CompositionLocalValues(private val values: Array<ProvidedValue<*>>) {
 
-    @Suppress("ComposableNaming")
     @Composable
     @NonRestartableComposable
-    fun provided(block: @Composable () -> Unit) {
-        CompositionLocalProvider(*values, content = block)
+    fun Provider(content: @Composable () -> Unit) {
+        CompositionLocalProvider(*values, content = content)
     }
 
 }

@@ -4,6 +4,8 @@ import android.view.Choreographer
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -21,6 +23,7 @@ import com.mxalbert.sharedelements.SharedElementsTracker.State.*
 @Composable
 internal fun BaseSharedElement(
     elementInfo: SharedElementInfo,
+    isFullscreen: Boolean,
     placeholder: @Composable () -> Unit,
     overlay: @Composable (SharedElementsTransitionState) -> Unit,
     content: @Composable (Modifier) -> Unit
@@ -31,20 +34,33 @@ internal fun BaseSharedElement(
     setShouldHide(shouldHide)
 
     val compositionLocalValues = compositionLocalValues
-    val modifierWithOnPositioned = Modifier.onGloballyPositioned { coordinates ->
+    if (isFullscreen) {
         rootState.onElementPositioned(
             elementInfo,
             compositionLocalValues,
             placeholder,
             overlay,
-            coordinates,
+            null,
             setShouldHide
         )
-    }.run {
-        if (shouldHide || savedShouldHide) alpha(0f) else this
-    }
 
-    content(modifierWithOnPositioned)
+        Spacer(modifier = Modifier.fillMaxSize())
+    } else {
+        val contentModifier = Modifier.onGloballyPositioned { coordinates ->
+            rootState.onElementPositioned(
+                elementInfo,
+                compositionLocalValues,
+                placeholder,
+                overlay,
+                coordinates,
+                setShouldHide
+            )
+        }.run {
+            if (shouldHide || savedShouldHide) alpha(0f) else this
+        }
+
+        content(contentModifier)
+    }
 
     DisposableEffect(elementInfo) {
         onDispose {
@@ -61,11 +77,15 @@ fun SharedElementsRoot(
 
     Box(modifier = Modifier.onGloballyPositioned { layoutCoordinates ->
         rootState.rootCoordinates = layoutCoordinates
+        rootState.rootBounds = Rect(Offset.Zero, layoutCoordinates.size.toSize())
     }) {
-        CompositionLocalProvider(LocalSharedElementsRootState provides rootState) {
+        CompositionLocalProvider(
+            LocalSharedElementsRootState provides rootState,
+            LocalSharedElementsRootScope provides rootState.scope
+        ) {
             rootState.scope.content()
+            SharedElementTransitionsOverlay(rootState)
         }
-        SharedElementTransitionsOverlay(rootState)
     }
 
     DisposableEffect(Unit) {
@@ -80,14 +100,17 @@ interface SharedElementsRootScope {
     fun prepareTransition(vararg elements: Any)
 }
 
+val LocalSharedElementsRootScope = staticCompositionLocalOf<SharedElementsRootScope?> { null }
+
 @Composable
 private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) {
     rootState.recomposeScope = currentRecomposeScope
     rootState.trackers.forEach { (key, tracker) ->
         key(key) {
             val transition = tracker.transition
-            if (transition != null) {
-                val startElement = transition.startElement
+            val start = (tracker.state as? StartElementPositioned)?.startElement
+            if (transition != null || (start != null && start.bounds == null)) {
+                val startElement = start ?: transition!!.startElement
                 val startScreenKey = startElement.info.screenKey
                 val endElement = (transition as? InProgress)?.endElement
                 val spec = startElement.info.spec
@@ -99,10 +122,16 @@ private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) 
                 val direction = if (endElement == null) null else remember(startScreenKey) {
                     val direction = spec.direction
                     if (direction != TransitionDirection.Auto) direction else
-                        calculateDirection(startElement.bounds, endElement.bounds)
+                        calculateDirection(
+                            startElement.bounds ?: rootState.rootBounds!!,
+                            endElement.bounds ?: rootState.rootBounds!!
+                        )
                 }
 
-                startElement.Placeholder(fraction, endElement, direction, spec, tracker.pathMotion)
+                startElement.Placeholder(
+                    rootState, fraction, endElement,
+                    direction, spec, tracker.pathMotion
+                )
 
                 if (transition is InProgress) {
                     LaunchedEffect(transition, animated) {
@@ -125,6 +154,7 @@ private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) 
 
 @Composable
 private fun PositionedSharedElement.Placeholder(
+    rootState: SharedElementsRootState,
     fraction: Float,
     end: PositionedSharedElement? = null,
     direction: TransitionDirection? = null,
@@ -135,11 +165,11 @@ private fun PositionedSharedElement.Placeholder(
         SharedElementsTransitionState(
             fraction = fraction,
             startInfo = info,
-            startBounds = bounds,
+            startBounds = if (end == null) bounds else bounds ?: rootState.rootBounds,
             startCompositionLocalValues = compositionLocalValues,
             startPlaceholder = placeholder,
             endInfo = end?.info,
-            endBounds = end?.bounds,
+            endBounds = end?.run { bounds ?: rootState.rootBounds },
             endCompositionLocalValues = end?.compositionLocalValues,
             endPlaceholder = end?.placeholder,
             direction = direction,
@@ -159,6 +189,7 @@ private class SharedElementsRootState {
     val trackers = mutableMapOf<Any, SharedElementsTracker>()
     var recomposeScope: RecomposeScope? = null
     var rootCoordinates: LayoutCoordinates? = null
+    var rootBounds: Rect? = null
 
     fun onElementRegistered(elementInfo: SharedElementInfo): Boolean {
         choreographer.removeCallback(elementInfo)
@@ -170,7 +201,7 @@ private class SharedElementsRootState {
         compositionLocalValues: CompositionLocalValues,
         placeholder: @Composable () -> Unit,
         overlay: @Composable (SharedElementsTransitionState) -> Unit,
-        coordinates: LayoutCoordinates,
+        coordinates: LayoutCoordinates?,
         setShouldHide: (Boolean) -> Unit
     ) {
         val element = PositionedSharedElement(
@@ -178,7 +209,7 @@ private class SharedElementsRootState {
             compositionLocalValues = compositionLocalValues,
             placeholder = placeholder,
             overlay = overlay,
-            bounds = calculateElementBoundsInRoot(coordinates)
+            bounds = coordinates?.calculateBoundsInRoot()
         )
         getTracker(elementInfo).onElementPositioned(element, setShouldHide)
     }
@@ -205,10 +236,10 @@ private class SharedElementsRootState {
         }
     }
 
-    private fun calculateElementBoundsInRoot(elementCoordinates: LayoutCoordinates): Rect =
+    private fun LayoutCoordinates.calculateBoundsInRoot(): Rect =
         Rect(
-            rootCoordinates?.localPositionOf(elementCoordinates, Offset.Zero)
-                ?: elementCoordinates.positionInRoot(), elementCoordinates.size.toSize()
+            rootCoordinates?.localPositionOf(this, Offset.Zero)
+                ?: positionInRoot(), size.toSize()
         )
 
     private inner class Scope : SharedElementsRootScope {
@@ -228,7 +259,7 @@ private class SharedElementsRootState {
 private class SharedElementsTracker(
     private val onTransitionChanged: (SharedElementTransition?) -> Unit
 ) {
-    private var state: State = Empty
+    var state: State = Empty
 
     var pathMotion: PathMotion? = null
 
@@ -240,7 +271,6 @@ private class SharedElementsTracker(
                 onTransitionChanged(value)
             }
         }
-
 
     val isEmpty: Boolean get() = state is Empty
 
@@ -341,7 +371,7 @@ private class SharedElementsTracker(
         }
     }
 
-    private sealed class State {
+    sealed class State {
         object Empty : State()
 
         open class StartElementRegistered(val startElementInfo: SharedElementInfo) : State() {
@@ -379,7 +409,7 @@ const val FadeThroughProgressThreshold = 0.35f
 internal class SharedElementsTransitionState(
     val fraction: Float,
     val startInfo: SharedElementInfo,
-    val startBounds: Rect,
+    val startBounds: Rect?,
     val startCompositionLocalValues: CompositionLocalValues,
     val startPlaceholder: @Composable () -> Unit,
     val endInfo: SharedElementInfo?,
@@ -412,7 +442,7 @@ private class PositionedSharedElement(
     val compositionLocalValues: CompositionLocalValues,
     val placeholder: @Composable () -> Unit,
     val overlay: @Composable (SharedElementsTransitionState) -> Unit,
-    val bounds: Rect
+    val bounds: Rect?
 )
 
 private sealed class SharedElementTransition(val startElement: PositionedSharedElement) {
@@ -452,3 +482,5 @@ private class ChoreographerWrapper {
         callbacks.clear()
     }
 }
+
+internal val Fullscreen = Modifier.fillMaxSize()
