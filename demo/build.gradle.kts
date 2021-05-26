@@ -14,7 +14,7 @@ android {
         applicationId = "com.mxalbert.sharedelements.demo"
         minSdk = libs.versions.sdk.min.get().toInt()
         targetSdk = libs.versions.sdk.target.get().toInt()
-        versionName = "0.1.0-beta08"
+        versionName = project.property("VERSION_NAME") as String
         versionCode = 1
     }
 
