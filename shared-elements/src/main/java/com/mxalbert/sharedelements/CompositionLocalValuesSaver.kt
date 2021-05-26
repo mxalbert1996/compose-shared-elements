@@ -18,7 +18,9 @@ private val compositionLocalList = listOf(
     LocalTextStyle
 ) as List<ProvidableCompositionLocal<Any>>
 
-internal inline class CompositionLocalValues(private val values: Array<ProvidedValue<*>>) {
+@JvmInline
+@Immutable
+internal value class CompositionLocalValues(private val values: Array<ProvidedValue<*>>) {
 
     @Suppress("ComposableNaming")
     @Composable

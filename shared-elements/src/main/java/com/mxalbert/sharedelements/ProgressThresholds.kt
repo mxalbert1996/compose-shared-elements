@@ -6,8 +6,9 @@ import androidx.compose.ui.util.packFloats
 import androidx.compose.ui.util.unpackFloat1
 import androidx.compose.ui.util.unpackFloat2
 
+@JvmInline
 @Immutable
-inline class ProgressThresholds(private val packedValue: Long) {
+value class ProgressThresholds(private val packedValue: Long) {
 
     @Stable
     val start: Float

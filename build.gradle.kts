@@ -6,18 +6,10 @@ buildscript {
     }
 
     dependencies {
-        classpath(Deps.AGP)
-        classpath(kotlin("gradle-plugin", Versions.Kotlin))
+        classpath("com.android.tools.build:gradle:7.0.0-beta02")
+        classpath(kotlin("gradle-plugin", "1.5.10"))
     }
 
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        jcenter()  // kotlinx.collections.immutable needs this
-    }
 }
 
 task<Delete>("clean") {

@@ -5,28 +5,27 @@ plugins {
 
 android {
 
-    compileSdkVersion(Versions.Sdk.Compile)
-    buildToolsVersion = Versions.BuildTools
+    compileSdk = libs.versions.sdk.compile.get().toInt()
+    buildToolsVersion = libs.versions.buildTools.get()
 
     buildFeatures.compose = true
 
     defaultConfig {
         applicationId = "com.mxalbert.sharedelements.demo"
-        minSdkVersion(Versions.Sdk.Min)
-        targetSdkVersion(Versions.Sdk.Target)
-        versionCode = Versions.Project.Code
-        versionName = Versions.Project.Name
+        minSdk = libs.versions.sdk.min.get().toInt()
+        targetSdk = libs.versions.sdk.target.get().toInt()
+        versionName = "0.1.0-beta08"
+        versionCode = 1
     }
 
     buildTypes {
         release {
-            postprocessing {
-                isRemoveUnusedCode = true
-                isRemoveUnusedResources = true
-                isObfuscate = false
-                isOptimizeCode = true
-                proguardFile("proguard-rules.pro")
-            }
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
@@ -36,21 +35,20 @@ android {
     }
 
     kotlinOptions {
-        useIR = true
         jvmTarget = JavaVersion.VERSION_1_8.toString()
         freeCompilerArgs = freeCompilerArgs + "-Xopt-in=kotlin.RequiresOptIn"
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Versions.Compose
+        kotlinCompilerExtensionVersion = libs.versions.compose.get()
     }
 
 }
 
 dependencies {
-    implementation(project(":shared-elements"))
-    implementation(Deps.AndroidX.Core)
-    implementation(Deps.AndroidX.Activity)
-    implementation(Deps.Compose.Ui)
-    implementation(Deps.Compose.Material)
+    implementation(projects.sharedElements)
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.compose.ui.ui)
+    implementation(libs.compose.material.material)
 }

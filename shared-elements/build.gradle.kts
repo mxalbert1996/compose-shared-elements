@@ -5,16 +5,14 @@ plugins {
 
 android {
 
-    compileSdkVersion(Versions.Sdk.Compile)
-    buildToolsVersion = Versions.BuildTools
+    compileSdk = libs.versions.sdk.compile.get().toInt()
+    buildToolsVersion = libs.versions.buildTools.get()
 
     buildFeatures.compose = true
 
     defaultConfig {
-        minSdkVersion(Versions.Sdk.Min)
-        targetSdkVersion(Versions.Sdk.Target)
-        versionCode = Versions.Project.Code
-        versionName = Versions.Project.Name
+        minSdk = libs.versions.sdk.min.get().toInt()
+        targetSdk = libs.versions.sdk.target.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -26,24 +24,19 @@ android {
     }
 
     kotlinOptions {
-        useIR = true
         jvmTarget = JavaVersion.VERSION_1_8.toString()
-        freeCompilerArgs = freeCompilerArgs + "-Xinline-classes"
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Versions.Compose
+        kotlinCompilerExtensionVersion = libs.versions.compose.get()
     }
 
 }
 
 dependencies {
-    implementation(Deps.Compose.Foundation)
-    implementation(Deps.Compose.Ui)
-    implementation(Deps.Compose.UiUtil)
-    implementation(Deps.Compose.Material)
+    implementation(libs.bundles.compose)
 
-    testImplementation(Deps.JUnit)
-    androidTestImplementation(Deps.TestExt)
-    androidTestImplementation(Deps.Espresso)
+    testImplementation(libs.jUnit)
+    androidTestImplementation(libs.testExt)
+    androidTestImplementation(libs.espresso)
 }
