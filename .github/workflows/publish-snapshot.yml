@@ -3,6 +3,8 @@ name: Publish snapshot
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'shared-elements/**'
   workflow_dispatch:
 
 jobs:

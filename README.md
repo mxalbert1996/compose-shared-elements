@@ -9,6 +9,22 @@ Currently providing the following transition patterns:
 
 ![Shared Elements](images/list.gif) ![Material Container Transform](images/cards.gif)
 
+## Download
+
+While this library is highly experimental, if you want to use it, [snapshot versions](https://s01.oss.sonatype.org/content/repositories/snapshots/com/mxalbert/sharedelements/shared-elements/) are available at Sonatype OSSRH's snapshot repository. These are updated on every commit to `main`.
+To use it, 
+```Kotlin
+repositories {
+    // ...
+    maven("https://s01.oss.sonatype.org/content/repositories/snapshots")  // build.gradle.kts
+    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }  // build.gradle
+}
+
+dependencies {
+    implemetation("com.mxalbert.sharedelements:shared-elements:0.1.0-SNAPSHOT")
+}
+```
+
 ## How to use
 
 1. Define elements with the same `key` and different `screenKey`s using `SharedElement` or `SharedMaterialContainer` composables.
