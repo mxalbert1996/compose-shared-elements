@@ -5,6 +5,9 @@ on:
     branches: [ main ]
     paths:
       - 'shared-elements/**'
+      - '*.kts'
+      - '*.properties'
+      - 'gradle/**'
   workflow_dispatch:
 
 jobs:

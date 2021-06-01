@@ -2,6 +2,7 @@ package com.mxalbert.sharedelements.demo
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.Crossfade
@@ -78,7 +79,6 @@ class MainActivity : ComponentActivity() {
     )
 
     private var selectedUser: User? by mutableStateOf(null)
-    private lateinit var scope: SharedElementsRootScope
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,20 +111,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        if (selectedUser != null) {
-            changeUser(null)
-        } else {
-            super.onBackPressed()
-        }
-    }
-
-    private fun changeUser(user: User?) {
+    private fun SharedElementsRootScope.changeUser(user: User?) {
         val currentUser = selectedUser
         if (currentUser != user) {
             val targetUser = user ?: currentUser
             if (targetUser != null) {
-                scope.prepareTransition(targetUser.avatar, targetUser.name)
+                prepareTransition(targetUser.avatar, targetUser.name)
             }
             selectedUser = user
         }
@@ -133,9 +125,12 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun UserCardsRoot() {
         SharedElementsRoot {
-            scope = this
             val user = selectedUser
             val listState = rememberLazyListState()
+
+            BackHandler(enabled = user != null) {
+                changeUser(null)
+            }
 
             DelayExit(visible = user == null) {
                 UserCardsScreen(listState)
@@ -150,6 +145,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun UserCardsScreen(listState: LazyListState) {
+        val scope = LocalSharedElementsRootScope.current!!
         LazyVerticalGrid(
             cells = GridCells.Fixed(2),
             state = listState,
@@ -166,7 +162,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Column(
                             modifier = Modifier.clickable(enabled = !scope.isRunningTransition) {
-                                changeUser(user)
+                                scope.changeUser(user)
                             }
                         ) {
                             Image(
@@ -203,12 +199,15 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        val scope = LocalSharedElementsRootScope.current!!
                         Image(
                             painterResource(id = user.avatar),
                             contentDescription = user.name,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable(enabled = !scope.isRunningTransition) { changeUser(null) },
+                                .clickable(enabled = !scope.isRunningTransition) {
+                                    scope.changeUser(null)
+                                },
                             contentScale = ContentScale.Crop
                         )
                         Text(
@@ -225,7 +224,10 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun UserListRoot() {
         SharedElementsRoot {
-            scope = this
+            BackHandler(enabled = selectedUser != null) {
+                changeUser(null)
+            }
+
             val listState = rememberLazyListState()
             Crossfade(
                 targetState = selectedUser,
@@ -241,10 +243,13 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun UserListScreen(listState: LazyListState) {
+        val scope = LocalSharedElementsRootScope.current!!
         LazyColumn(state = listState) {
             items(users) { user ->
                 ListItem(
-                    Modifier.clickable(enabled = !scope.isRunningTransition) { changeUser(user) },
+                    Modifier.clickable(enabled = !scope.isRunningTransition) {
+                        scope.changeUser(user)
+                    },
                     icon = {
                         SharedMaterialContainer(
                             key = user.avatar,
@@ -290,12 +295,13 @@ class MainActivity : ComponentActivity() {
                 elevation = 10.dp,
                 transitionSpec = FadeOutTransitionSpec
             ) {
+                val scope = LocalSharedElementsRootScope.current!!
                 Image(
                     painterResource(id = user.avatar),
                     contentDescription = user.name,
                     modifier = Modifier
                         .size(200.dp)
-                        .clickable(enabled = !scope.isRunningTransition) { changeUser(null) },
+                        .clickable(enabled = !scope.isRunningTransition) { scope.changeUser(null) },
                     contentScale = ContentScale.Crop
                 )
             }
