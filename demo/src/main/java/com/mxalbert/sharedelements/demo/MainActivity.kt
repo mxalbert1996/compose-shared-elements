@@ -78,7 +78,8 @@ class MainActivity : ComponentActivity() {
         User(R.drawable.avatar_16, "Victor")
     )
 
-    private var selectedUser: User? by mutableStateOf(null)
+    private var selectedUser: Int by mutableStateOf(-1)
+    private var previousSelectedUser: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,13 +112,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun SharedElementsRootScope.changeUser(user: User?) {
+    private fun SharedElementsRootScope.changeUser(user: Int) {
         val currentUser = selectedUser
         if (currentUser != user) {
-            val targetUser = user ?: currentUser
-            if (targetUser != null) {
-                prepareTransition(targetUser.avatar, targetUser.name)
+            val targetUser = if (user >= 0) user else currentUser
+            if (targetUser >= 0) {
+                users[targetUser].let {
+                    prepareTransition(it.avatar, it.name)
+                }
             }
+            previousSelectedUser = selectedUser
             selectedUser = user
         }
     }
@@ -128,16 +132,16 @@ class MainActivity : ComponentActivity() {
             val user = selectedUser
             val listState = rememberLazyListState()
 
-            BackHandler(enabled = user != null) {
-                changeUser(null)
+            BackHandler(enabled = user >= 0) {
+                changeUser(-1)
             }
 
-            DelayExit(visible = user == null) {
+            DelayExit(visible = user < 0) {
                 UserCardsScreen(listState)
             }
 
-            DelayExit(visible = user != null) {
-                val currentUser = remember { user!! }
+            DelayExit(visible = user >= 0) {
+                val currentUser = remember { users[user] }
                 UserCardDetailsScreen(currentUser)
             }
         }
@@ -145,13 +149,20 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun UserCardsScreen(listState: LazyListState) {
+        LaunchedEffect(listState) {
+            val previousIndex = (previousSelectedUser / 2).coerceAtLeast(0)
+            if (!listState.layoutInfo.visibleItemsInfo.any { it.index == previousIndex }) {
+                listState.scrollToItem(previousIndex)
+            }
+        }
+
         val scope = LocalSharedElementsRootScope.current!!
         LazyVerticalGrid(
             cells = GridCells.Fixed(2),
             state = listState,
             contentPadding = PaddingValues(4.dp)
         ) {
-            items(users) { user ->
+            itemsIndexed(users) { i, user ->
                 Box(modifier = Modifier.padding(4.dp)) {
                     SharedMaterialContainer(
                         key = user.name,
@@ -162,7 +173,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Column(
                             modifier = Modifier.clickable(enabled = !scope.isRunningTransition) {
-                                scope.changeUser(user)
+                                scope.changeUser(i)
                             }
                         ) {
                             Image(
@@ -206,7 +217,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable(enabled = !scope.isRunningTransition) {
-                                    scope.changeUser(null)
+                                    scope.changeUser(-1)
                                 },
                             contentScale = ContentScale.Crop
                         )
@@ -224,8 +235,8 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun UserListRoot() {
         SharedElementsRoot {
-            BackHandler(enabled = selectedUser != null) {
-                changeUser(null)
+            BackHandler(enabled = selectedUser >= 0) {
+                changeUser(-1)
             }
 
             val listState = rememberLazyListState()
@@ -233,9 +244,9 @@ class MainActivity : ComponentActivity() {
                 targetState = selectedUser,
                 animationSpec = tween(durationMillis = TransitionDurationMillis)
             ) { user ->
-                when (user) {
-                    null -> UserListScreen(listState)
-                    else -> UserDetailsScreen(user)
+                when {
+                    user < 0 -> UserListScreen(listState)
+                    else -> UserDetailsScreen(users[user])
                 }
             }
         }
@@ -243,12 +254,19 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun UserListScreen(listState: LazyListState) {
+        LaunchedEffect(listState) {
+            val previousIndex = previousSelectedUser.coerceAtLeast(0)
+            if (!listState.layoutInfo.visibleItemsInfo.any { it.index == previousIndex }) {
+                listState.scrollToItem(previousIndex)
+            }
+        }
+
         val scope = LocalSharedElementsRootScope.current!!
         LazyColumn(state = listState) {
-            items(users) { user ->
+            itemsIndexed(users) { i, user ->
                 ListItem(
                     Modifier.clickable(enabled = !scope.isRunningTransition) {
-                        scope.changeUser(user)
+                        scope.changeUser(i)
                     },
                     icon = {
                         SharedMaterialContainer(
@@ -301,7 +319,7 @@ class MainActivity : ComponentActivity() {
                     contentDescription = user.name,
                     modifier = Modifier
                         .size(200.dp)
-                        .clickable(enabled = !scope.isRunningTransition) { scope.changeUser(null) },
+                        .clickable(enabled = !scope.isRunningTransition) { scope.changeUser(-1) },
                     contentScale = ContentScale.Crop
                 )
             }

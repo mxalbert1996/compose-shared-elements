@@ -12,7 +12,7 @@ Currently providing the following transition patterns:
 ## Download
 
 While this library is highly experimental, if you want to use it, [snapshot versions](https://s01.oss.sonatype.org/content/repositories/snapshots/com/mxalbert/sharedelements/shared-elements/) are available at Sonatype OSSRH's snapshot repository. These are updated on every commit to `main`.
-To use it, 
+To use it:
 ```Kotlin
 repositories {
     // ...
@@ -37,4 +37,4 @@ Transition will start when elements with the same key are detected.
 * `SharedElementsTransitionSpec` of the start element will be used.
 * Transition is only applied to the shared elements, so you have to define the transition for the rest yourself. See the [demo](demo) for examples. If you want to prevent an element from showing in your self-defined transition, call `prepareTransition(key)`.
 * Elements are composed separately in an overlay during transition, so `remember` won't work as expected. If your element is stateful, define the state outside the `SharedElement` or `SharedMaterialContainer` composables.
-* If the element is full-screen (e.g. has `Modifier.fillMaxSize()`), specifying `isFullscreen = true` on it can greatly improve performance and allows you to use stateful composables.
+* If the element is root element (i.e. direct child of `SharedElementRoot`) and is full-screen (e.g. has `Modifier.fillMaxSize()`), specifying `isFullscreen = true` on it can greatly improve performance and allows you to use stateful composables.
