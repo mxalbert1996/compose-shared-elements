@@ -5,19 +5,17 @@ import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.*
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.contentColorFor
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.key
-import androidx.compose.runtime.remember
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
@@ -53,7 +51,7 @@ fun SharedMaterialContainer(
         realPlaceholder,
         { Placeholder(it) },
         {
-            Surface(
+            MaterialContainer(
                 modifier = it,
                 shape = shape,
                 color = color,
@@ -64,6 +62,43 @@ fun SharedMaterialContainer(
             )
         }
     )
+}
+
+@Composable
+private fun MaterialContainer(
+    modifier: Modifier,
+    shape: Shape,
+    color: Color,
+    contentColor: Color,
+    border: BorderStroke?,
+    elevation: Dp,
+    content: @Composable () -> Unit
+) {
+    val elevationOverlay = LocalElevationOverlay.current
+    val absoluteElevation = LocalAbsoluteElevation.current + elevation
+    val backgroundColor = if (color == MaterialTheme.colors.surface && elevationOverlay != null) {
+        elevationOverlay.apply(color, absoluteElevation)
+    } else {
+        color
+    }
+    CompositionLocalProvider(
+        LocalContentColor provides contentColor,
+        LocalAbsoluteElevation provides absoluteElevation
+    ) {
+        Box(
+            modifier = modifier
+                .shadow(elevation, shape, clip = false)
+                .then(if (border != null) Modifier.border(border, shape) else Modifier)
+                .background(
+                    color = backgroundColor,
+                    shape = shape
+                )
+                .clip(shape),
+            propagateMinConstraints = true
+        ) {
+            content()
+        }
+    }
 }
 
 @Composable
@@ -236,7 +271,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
             )
         }
 
-        Surface(
+        MaterialContainer(
             modifier = surfaceModifier,
             shape = shape,
             color = color,
