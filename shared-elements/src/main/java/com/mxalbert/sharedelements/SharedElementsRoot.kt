@@ -12,10 +12,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.*
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import com.mxalbert.sharedelements.SharedElementTransition.InProgress
 import com.mxalbert.sharedelements.SharedElementTransition.WaitingForEndElementPosition
 import com.mxalbert.sharedelements.SharedElementsTracker.State.*
@@ -84,7 +85,7 @@ fun SharedElementsRoot(
             LocalSharedElementsRootScope provides rootState.scope
         ) {
             rootState.scope.content()
-            SharedElementTransitionsOverlay(rootState)
+            UnboundedBox { SharedElementTransitionsOverlay(rootState) }
         }
     }
 
@@ -101,6 +102,20 @@ interface SharedElementsRootScope {
 }
 
 val LocalSharedElementsRootScope = staticCompositionLocalOf<SharedElementsRootScope?> { null }
+
+@Composable
+private fun UnboundedBox(content: @Composable () -> Unit) {
+    Layout(content) { measurables, constraints ->
+        val infiniteConstraints = Constraints()
+        val placeables = measurables.fastMap {
+            val isFullscreen = it.layoutId === FullscreenLayoutId
+            it.measure(if (isFullscreen) constraints else infiniteConstraints)
+        }
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            placeables.fastForEach { it.place(0, 0) }
+        }
+    }
+}
 
 @Composable
 private fun SharedElementTransitionsOverlay(rootState: SharedElementsRootState) {
@@ -323,7 +338,9 @@ private class SharedElementsTracker(
         val state = state
         if (state is StartElementPositioned && element.info == state.startElementInfo) {
             state.startElement = element
+            return
         }
+
         when (state) {
             is EndElementRegistered -> {
                 if (element.info == state.endElementInfo) {
@@ -341,7 +358,6 @@ private class SharedElementsTracker(
                     )
                 }
             }
-            is StartElementPositioned -> Unit
             is StartElementRegistered -> {
                 if (element.info == state.startElementInfo) {
                     this.state = StartElementPositioned(startElement = element)
@@ -484,3 +500,4 @@ private class ChoreographerWrapper {
 }
 
 internal val Fullscreen = Modifier.fillMaxSize()
+internal val FullscreenLayoutId = Any()

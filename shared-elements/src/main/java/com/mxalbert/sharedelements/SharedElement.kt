@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.round
@@ -67,16 +68,20 @@ private fun Placeholder(state: SharedElementsTransitionState) {
             val alpha = if (bounds == null) 1f else
                 calculateAlpha(state.direction, state.spec?.fadeMode, fadeFraction, isStart)
             if (alpha > 0) {
-                val modifier = if (bounds == null) Fullscreen else Modifier.size(
-                    bounds.width.toDp(),
-                    bounds.height.toDp()
-                ).offset { offset }.graphicsLayer {
-                    this.transformOrigin = TopLeft
-                    this.scaleX = scaleX
-                    this.scaleY = scaleY
-                    this.alpha = alpha
-                }.run {
-                    if (zIndex == 0f) this else zIndex(zIndex)
+                val modifier = if (bounds == null) {
+                    Fullscreen.layoutId(FullscreenLayoutId)
+                } else {
+                    Modifier.size(
+                        bounds.width.toDp(),
+                        bounds.height.toDp()
+                    ).offset { offset }.graphicsLayer {
+                        this.transformOrigin = TopLeft
+                        this.scaleX = scaleX
+                        this.scaleY = scaleY
+                        this.alpha = alpha
+                    }.run {
+                        if (zIndex == 0f) this else zIndex(zIndex)
+                    }
                 }
 
                 compositionLocalValues.Provider {

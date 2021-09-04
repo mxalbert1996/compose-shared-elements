@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.util.lerp
@@ -123,7 +124,9 @@ private fun Placeholder(state: SharedElementsTransitionState) {
         var elevation = startInfo.elevation
         var startAlpha = 1f
 
-        if (start != null) {
+        if (start == null) {
+            surfaceModifier = Modifier.layoutId(FullscreenLayoutId)
+        } else {
             val fitMode = if (spec == null || end == null) null else remember {
                 val mode = spec.fitMode
                 if (mode != FitMode.Auto) mode else
