@@ -5,10 +5,9 @@ import androidx.compose.ui.geometry.Offset
 internal object QuadraticBezier {
 
     private class PointEntry(
-        @JvmField val t: Float,
-        @JvmField val point: Offset
+        val t: Float,
+        val point: Offset
     ) {
-        @JvmField
         var next: PointEntry? = null
     }
 

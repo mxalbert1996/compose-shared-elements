@@ -185,7 +185,7 @@ private val LocalSharedElementsRootState = staticCompositionLocalOf<SharedElemen
 
 private class SharedElementsRootState {
     private val choreographer = ChoreographerWrapper()
-    val scope = Scope()
+    val scope: SharedElementsRootScope = Scope()
     val trackers = mutableMapOf<Any, SharedElementsTracker>()
     var recomposeScope: RecomposeScope? = null
     var rootCoordinates: LayoutCoordinates? = null
@@ -230,7 +230,7 @@ private class SharedElementsRootState {
         return trackers.getOrPut(elementInfo.key) {
             SharedElementsTracker { transition ->
                 recomposeScope?.invalidate()
-                scope.isRunningTransition = if (transition != null) true else
+                (scope as Scope).isRunningTransition = if (transition != null) true else
                     trackers.values.any { it.transition != null }
             }
         }
