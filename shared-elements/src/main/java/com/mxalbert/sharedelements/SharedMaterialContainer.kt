@@ -112,8 +112,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
         val end = state.endBounds
         val fraction = state.fraction
 
-        @Suppress("RedundantExplicitType")
-        var surfaceModifier: Modifier = Modifier
+        val surfaceModifier: Modifier
         var startContentModifier = Fullscreen
         val elements = mutableListOf<ElementCall>()
 
