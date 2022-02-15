@@ -330,6 +330,7 @@ private class SharedElementsTracker(
             is Empty -> {
                 this.state = StartElementRegistered(startElementInfo = elementInfo)
             }
+            else -> Unit
         }
         return shouldHide || transition != null
     }
@@ -384,6 +385,7 @@ private class SharedElementsTracker(
                     transition = null
                 }
             }
+            else -> Unit
         }
     }
 

@@ -11,7 +11,10 @@ android {
     compileSdk = libs.versions.sdk.compile.get().toInt()
     buildToolsVersion = libs.versions.buildTools.get()
 
-    buildFeatures.compose = true
+    buildFeatures {
+        buildConfig = false
+        compose = true
+    }
 
     defaultConfig {
         minSdk = libs.versions.sdk.min.get().toInt()
