@@ -201,7 +201,7 @@ private val LocalSharedElementsRootState = staticCompositionLocalOf<SharedElemen
 private class SharedElementsRootState {
     private val choreographer = ChoreographerWrapper()
     val scope: SharedElementsRootScope = Scope()
-    val trackers = mutableMapOf<Any, SharedElementsTracker>()
+    val trackers = mutableStateMapOf<Any, SharedElementsTracker>()
     var recomposeScope: RecomposeScope? = null
     var rootCoordinates: LayoutCoordinates? = null
     var rootBounds: Rect? = null
@@ -278,10 +278,13 @@ private class SharedElementsTracker(
 
     var pathMotion: PathMotion? = null
 
-    var transition: SharedElementTransition? = null
+    // Use snapshot state to trigger recomposition of start element when transition starts
+    private var _transition: SharedElementTransition? by mutableStateOf(null)
+    var transition: SharedElementTransition?
+        get() = _transition
         set(value) {
-            if (field != value) {
-                field = value
+            if (_transition != value) {
+                _transition = value
                 if (value == null) pathMotion = null
                 onTransitionChanged(value)
             }
