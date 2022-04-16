@@ -44,7 +44,6 @@ dependencies {
 
     testImplementation(libs.jUnit)
     androidTestImplementation(libs.testExt)
-    androidTestImplementation(libs.espresso)
 }
 
 mavenPublish {
