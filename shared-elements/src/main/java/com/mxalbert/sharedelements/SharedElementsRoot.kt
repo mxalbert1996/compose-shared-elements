@@ -201,7 +201,7 @@ private val LocalSharedElementsRootState = staticCompositionLocalOf<SharedElemen
 private class SharedElementsRootState {
     private val choreographer = ChoreographerWrapper()
     val scope: SharedElementsRootScope = Scope()
-    val trackers = mutableStateMapOf<Any, SharedElementsTracker>()
+    var trackers by mutableStateOf(mapOf<Any, SharedElementsTracker>())
     var recomposeScope: RecomposeScope? = null
     var rootCoordinates: LayoutCoordinates? = null
     var rootBounds: Rect? = null
@@ -233,7 +233,7 @@ private class SharedElementsRootState {
         choreographer.postCallback(elementInfo) {
             val tracker = getTracker(elementInfo)
             tracker.onElementUnregistered(elementInfo)
-            if (tracker.isEmpty) trackers.remove(elementInfo.key)
+            if (tracker.isEmpty) trackers = trackers - elementInfo.key
         }
     }
 
@@ -242,13 +242,11 @@ private class SharedElementsRootState {
     }
 
     private fun getTracker(elementInfo: SharedElementInfo): SharedElementsTracker {
-        return trackers.getOrPut(elementInfo.key) {
-            SharedElementsTracker { transition ->
-                recomposeScope?.invalidate()
-                (scope as Scope).isRunningTransition = if (transition != null) true else
-                    trackers.values.any { it.transition != null }
-            }
-        }
+        return trackers[elementInfo.key] ?: SharedElementsTracker { transition ->
+            recomposeScope?.invalidate()
+            (scope as Scope).isRunningTransition = if (transition != null) true else
+                trackers.values.any { it.transition != null }
+        }.also { trackers = trackers + (elementInfo.key to it) }
     }
 
     private fun LayoutCoordinates.calculateBoundsInRoot(): Rect =
