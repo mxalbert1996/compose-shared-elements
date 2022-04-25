@@ -4,7 +4,6 @@ plugins {
 }
 
 android {
-
     compileSdk = libs.versions.sdk.compile.get().toInt()
     buildToolsVersion = libs.versions.buildTools.get()
 
@@ -42,7 +41,6 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.compose.get()
     }
-
 }
 
 dependencies {

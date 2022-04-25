@@ -1,13 +1,13 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
     id("com.android.library")
     kotlin("android")
-    id("com.vanniktech.maven.publish")
+    id("com.vanniktech.maven.publish.base")
 }
 
 android {
-
     compileSdk = libs.versions.sdk.compile.get().toInt()
     buildToolsVersion = libs.versions.buildTools.get()
 
@@ -36,7 +36,6 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.compose.get()
     }
-
 }
 
 dependencies {
@@ -46,8 +45,13 @@ dependencies {
     androidTestImplementation(libs.testExt)
 }
 
-mavenPublish {
-    sonatypeHost = SonatypeHost.S01
+mavenPublishing {
+    group = project.property("GROUP") ?: group
+    version = project.property("VERSION_NAME") ?: version
+    publishToMavenCentral(SonatypeHost.S01)
+    signAllPublications()
+    pomFromGradleProperties()
+    configure(AndroidSingleVariantLibrary())
 }
 
 publishing {
