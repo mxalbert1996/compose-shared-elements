@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    implemetation("com.mxalbert.sharedelements:shared-elements:0.1.0-SNAPSHOT")
+    implementation("com.mxalbert.sharedelements:shared-elements:0.1.0-SNAPSHOT")
 }
 ```
 
