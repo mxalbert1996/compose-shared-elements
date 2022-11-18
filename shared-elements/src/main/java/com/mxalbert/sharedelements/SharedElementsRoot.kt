@@ -72,12 +72,12 @@ internal fun BaseSharedElement(
 
 @Composable
 fun SharedElementsRoot(
-    content: @Composable SharedElementsRootScope.() -> Unit
+    rootState: SharedElementsRootState = remember { SharedElementsRootState() },
+    content: @Composable SharedElementsRootScope.() -> Unit = {}
 ) {
-    val rootState = remember { SharedElementsRootState() }
-
     Box(modifier = Modifier.onGloballyPositioned { layoutCoordinates ->
         rootState.rootCoordinates = layoutCoordinates
+        rootState.rootWindowPosition = layoutCoordinates.positionInWindow()
         rootState.rootBounds = Rect(Offset.Zero, layoutCoordinates.size.toSize())
     }) {
         CompositionLocalProvider(
@@ -194,24 +194,25 @@ private fun PositionedSharedElement.Placeholder(
     )
 }
 
-private val LocalSharedElementsRootState = staticCompositionLocalOf<SharedElementsRootState> {
+val LocalSharedElementsRootState = staticCompositionLocalOf<SharedElementsRootState> {
     error("SharedElementsRoot not found. SharedElement must be hosted in SharedElementsRoot.")
 }
 
-private class SharedElementsRootState {
+class SharedElementsRootState {
     private val choreographer = ChoreographerWrapper()
     val scope: SharedElementsRootScope = Scope()
-    var trackers by mutableStateOf(mapOf<Any, SharedElementsTracker>())
+    internal var trackers by mutableStateOf(mapOf<Any, SharedElementsTracker>())
     var recomposeScope: RecomposeScope? = null
     var rootCoordinates: LayoutCoordinates? = null
+    var rootWindowPosition: Offset? = null
     var rootBounds: Rect? = null
 
-    fun onElementRegistered(elementInfo: SharedElementInfo): Boolean {
+    internal fun onElementRegistered(elementInfo: SharedElementInfo): Boolean {
         choreographer.removeCallback(elementInfo)
         return getTracker(elementInfo).onElementRegistered(elementInfo)
     }
 
-    fun onElementPositioned(
+    internal fun onElementPositioned(
         elementInfo: SharedElementInfo,
         compositionLocalValues: CompositionLocalValues,
         placeholder: @Composable () -> Unit,
@@ -229,7 +230,7 @@ private class SharedElementsRootState {
         getTracker(elementInfo).onElementPositioned(element, setShouldHide)
     }
 
-    fun onElementDisposed(elementInfo: SharedElementInfo) {
+    internal fun onElementDisposed(elementInfo: SharedElementInfo) {
         choreographer.postCallback(elementInfo) {
             val tracker = getTracker(elementInfo)
             tracker.onElementUnregistered(elementInfo)
@@ -249,11 +250,16 @@ private class SharedElementsRootState {
         }.also { trackers = trackers + (elementInfo.key to it) }
     }
 
-    private fun LayoutCoordinates.calculateBoundsInRoot(): Rect =
-        Rect(
-            rootCoordinates?.localPositionOf(this, Offset.Zero)
-                ?: positionInRoot(), size.toSize()
-        )
+    private fun LayoutCoordinates.calculateBoundsInRoot(): Rect {
+        val rootOffsetInWindow = rootWindowPosition ?: return Rect(positionInRoot(), size.toSize())
+
+        val myOffsetInWindow = positionInWindow()
+
+        val xOffsetRelativeToRoot = myOffsetInWindow.x - rootOffsetInWindow.x
+        val yOffsetRelativeToRoot = myOffsetInWindow.y - rootOffsetInWindow.y
+
+        return Rect(Offset(xOffsetRelativeToRoot, yOffsetRelativeToRoot), size.toSize())
+    }
 
     private inner class Scope : SharedElementsRootScope {
 
@@ -269,7 +275,7 @@ private class SharedElementsRootState {
 
 }
 
-private class SharedElementsTracker(
+internal class SharedElementsTracker(
     private val onTransitionChanged: (SharedElementTransition?) -> Unit
 ) {
     var state: State = Empty
@@ -456,7 +462,7 @@ internal open class SharedElementInfo(
 
 }
 
-private class PositionedSharedElement(
+internal class PositionedSharedElement(
     val info: SharedElementInfo,
     val compositionLocalValues: CompositionLocalValues,
     val placeholder: @Composable () -> Unit,
@@ -464,7 +470,7 @@ private class PositionedSharedElement(
     val bounds: Rect?
 )
 
-private sealed class SharedElementTransition(val startElement: PositionedSharedElement) {
+internal sealed class SharedElementTransition(val startElement: PositionedSharedElement) {
 
     class WaitingForEndElementPosition(startElement: PositionedSharedElement) :
         SharedElementTransition(startElement)
