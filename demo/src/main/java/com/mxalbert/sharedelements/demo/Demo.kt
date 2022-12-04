@@ -4,11 +4,11 @@ import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -27,14 +27,14 @@ private var previousSelectedUser: Int = -1
 fun UserCardsRoot() {
     SharedElementsRoot {
         val user = selectedUser
-        val listState = rememberLazyListState()
+        val gridState = rememberLazyGridState()
 
         BackHandler(enabled = user >= 0) {
             changeUser(-1)
         }
 
         DelayExit(visible = user < 0) {
-            UserCardsScreen(listState)
+            UserCardsScreen(gridState)
         }
 
         DelayExit(visible = user >= 0) {
@@ -44,9 +44,8 @@ fun UserCardsRoot() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun UserCardsScreen(listState: LazyListState) {
+private fun UserCardsScreen(listState: LazyGridState) {
     LaunchedEffect(listState) {
         val previousIndex = (previousSelectedUser / 2).coerceAtLeast(0)
         if (!listState.layoutInfo.visibleItemsInfo.any { it.index == previousIndex }) {
@@ -56,7 +55,7 @@ private fun UserCardsScreen(listState: LazyListState) {
 
     val scope = LocalSharedElementsRootScope.current!!
     LazyVerticalGrid(
-        cells = GridCells.Fixed(2),
+        columns = GridCells.Fixed(2),
         state = listState,
         contentPadding = PaddingValues(4.dp)
     ) {

@@ -34,14 +34,16 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.get()
+        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
     }
 }
 
 dependencies {
+    implementation(platform(libs.compose.bom))
     implementation(libs.bundles.compose)
 
     testImplementation(libs.jUnit)
+    androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.testExt)
 }
 

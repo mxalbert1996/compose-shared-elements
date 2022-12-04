@@ -1,30 +1,32 @@
 [versions]
-agp = "7.1.3"
+agp = "7.3.1"
 sdk-min = "21"
-sdk-target = "31"
-sdk-compile = "31"
-buildTools = "32.0.0"
-maven-publish = "0.19.0"
-kotlin = "1.6.10"
-compose = "1.1.1"
-androidx-core = "1.7.0"
-androidx-activity = "1.4.0"
+sdk-target = "33"
+sdk-compile = "33"
+buildTools = "33.0.0"
+maven-publish = "0.21.0"
+kotlin = "1.7.20"
+compose-compiler = "1.3.2"
+compose-bom = "2022.11.00"
+androidx-core = "1.9.0"
+androidx-activity = "1.6.1"
 jUnit = "4.13.2"
-testExt = "1.1.3"
+testExt = "1.1.4"
 
 [libraries]
 kotlin-gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 agp = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 maven-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "maven-publish" }
 
-compose-foundation-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
-compose-ui-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
-compose-ui-util = { module = "androidx.compose.ui:ui-util", version.ref = "compose" }
-compose-material-material = { module = "androidx.compose.material:material", version.ref = "compose" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
+compose-ui-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-util = { module = "androidx.compose.ui:ui-util" }
+compose-foundation-foundation = { module = "androidx.compose.foundation:foundation" }
+compose-material-material = { module = "androidx.compose.material:material" }
 androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 jUnit = { module = "junit:junit", version.ref = "jUnit" }
 testExt = { module = "androidx.test.ext:junit", version.ref = "testExt" }
 
 [bundles]
-compose = ["compose-foundation-foundation", "compose-ui-ui", "compose-ui-util", "compose-material-material"]
+compose = ["compose-ui-ui", "compose-ui-util", "compose-foundation-foundation", "compose-material-material"]

@@ -39,11 +39,12 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.get()
+        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
     }
 }
 
 dependencies {
+    implementation(platform(libs.compose.bom))
     implementation(projects.sharedElements)
     implementation(libs.androidx.core)
     implementation(libs.androidx.activity.compose)
