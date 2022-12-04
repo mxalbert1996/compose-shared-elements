@@ -11,7 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.*
-import androidx.compose.material.*
+import androidx.compose.material.LocalAbsoluteElevation
+import androidx.compose.material.LocalContentColor
+import androidx.compose.material.LocalElevationOverlay
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.contentColorFor
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -210,7 +214,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
                             containerModifier,
                             true,
                             contentModifier,
-                            state.endCompositionLocalValues!!,
+                            state.endCompositionLocalContext!!,
                             state.endPlaceholder!!
                         )
                     )
@@ -267,7 +271,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
                     containerModifier,
                     start != null,
                     startContentModifier,
-                    state.startCompositionLocalValues,
+                    state.startCompositionLocalContext,
                     state.startPlaceholder
                 )
             )
@@ -289,7 +293,10 @@ private fun Placeholder(state: SharedElementsTransitionState) {
                             relaxMaxSize = call.relaxMaxSize
                         ) {
                             ElementContainer(modifier = call.contentModifier) {
-                                call.compositionLocalValues.Provider(call.content)
+                                CompositionLocalProvider(
+                                    call.compositionLocalContext,
+                                    content = call.content
+                                )
                             }
                         }
                     }
@@ -304,7 +311,7 @@ private class ElementCall(
     val containerModifier: Modifier,
     val relaxMaxSize: Boolean,
     val contentModifier: Modifier,
-    val compositionLocalValues: CompositionLocalValues,
+    val compositionLocalContext: CompositionLocalContext,
     val content: @Composable () -> Unit
 )
 

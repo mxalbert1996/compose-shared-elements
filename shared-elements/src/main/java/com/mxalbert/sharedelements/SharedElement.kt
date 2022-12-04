@@ -2,9 +2,7 @@ package com.mxalbert.sharedelements
 
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -57,7 +55,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
 
         @Composable
         fun Container(
-            compositionLocalValues: CompositionLocalValues,
+            compositionLocalContext: CompositionLocalContext,
             bounds: Rect?,
             scaleX: Float,
             scaleY: Float,
@@ -84,7 +82,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
                     }
                 }
 
-                compositionLocalValues.Provider {
+                CompositionLocalProvider(compositionLocalContext) {
                     ElementContainer(
                         modifier = modifier,
                         content = content
@@ -99,10 +97,10 @@ private fun Placeholder(state: SharedElementsTransitionState) {
                 val (scaleX, scaleY) = if (i == 0) startScale else
                     calculateScale(endBounds!!, startBounds, 1 - scaleFraction)
                 Container(
-                    compositionLocalValues = if (i == 0) {
-                        state.startCompositionLocalValues
+                    compositionLocalContext = if (i == 0) {
+                        state.startCompositionLocalContext
                     } else {
-                        state.endCompositionLocalValues!!
+                        state.endCompositionLocalContext!!
                     },
                     bounds = if (i == 0) startBounds else endBounds,
                     scaleX = scaleX,

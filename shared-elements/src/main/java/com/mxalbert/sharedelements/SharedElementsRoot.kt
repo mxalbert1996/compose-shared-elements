@@ -34,11 +34,11 @@ internal fun BaseSharedElement(
     val shouldHide = rootState.onElementRegistered(elementInfo)
     setShouldHide(shouldHide)
 
-    val compositionLocalValues = compositionLocalValues
+    val compositionLocalContext = currentCompositionLocalContext
     if (isFullscreen) {
         rootState.onElementPositioned(
             elementInfo,
-            compositionLocalValues,
+            compositionLocalContext,
             placeholder,
             overlay,
             null,
@@ -50,7 +50,7 @@ internal fun BaseSharedElement(
         val contentModifier = Modifier.onGloballyPositioned { coordinates ->
             rootState.onElementPositioned(
                 elementInfo,
-                compositionLocalValues,
+                compositionLocalContext,
                 placeholder,
                 overlay,
                 coordinates,
@@ -181,11 +181,11 @@ private fun PositionedSharedElement.Placeholder(
             fraction = fraction,
             startInfo = info,
             startBounds = if (end == null) bounds else bounds ?: rootState.rootBounds,
-            startCompositionLocalValues = compositionLocalValues,
+            startCompositionLocalContext = compositionLocalContext,
             startPlaceholder = placeholder,
             endInfo = end?.info,
             endBounds = end?.run { bounds ?: rootState.rootBounds },
-            endCompositionLocalValues = end?.compositionLocalValues,
+            endCompositionLocalContext = end?.compositionLocalContext,
             endPlaceholder = end?.placeholder,
             direction = direction,
             spec = spec,
@@ -213,7 +213,7 @@ private class SharedElementsRootState {
 
     fun onElementPositioned(
         elementInfo: SharedElementInfo,
-        compositionLocalValues: CompositionLocalValues,
+        compositionLocalContext: CompositionLocalContext,
         placeholder: @Composable () -> Unit,
         overlay: @Composable (SharedElementsTransitionState) -> Unit,
         coordinates: LayoutCoordinates?,
@@ -221,7 +221,7 @@ private class SharedElementsRootState {
     ) {
         val element = PositionedSharedElement(
             info = elementInfo,
-            compositionLocalValues = compositionLocalValues,
+            compositionLocalContext = compositionLocalContext,
             placeholder = placeholder,
             overlay = overlay,
             bounds = coordinates?.calculateBoundsInRoot()
@@ -429,11 +429,11 @@ internal class SharedElementsTransitionState(
     val fraction: Float,
     val startInfo: SharedElementInfo,
     val startBounds: Rect?,
-    val startCompositionLocalValues: CompositionLocalValues,
+    val startCompositionLocalContext: CompositionLocalContext,
     val startPlaceholder: @Composable () -> Unit,
     val endInfo: SharedElementInfo?,
     val endBounds: Rect?,
-    val endCompositionLocalValues: CompositionLocalValues?,
+    val endCompositionLocalContext: CompositionLocalContext?,
     val endPlaceholder: (@Composable () -> Unit)?,
     val direction: TransitionDirection?,
     val spec: SharedElementsTransitionSpec?,
@@ -458,7 +458,7 @@ internal open class SharedElementInfo(
 
 private class PositionedSharedElement(
     val info: SharedElementInfo,
-    val compositionLocalValues: CompositionLocalValues,
+    val compositionLocalContext: CompositionLocalContext,
     val placeholder: @Composable () -> Unit,
     val overlay: @Composable (SharedElementsTransitionState) -> Unit,
     val bounds: Rect?
