@@ -5,9 +5,10 @@ plugins {
 
 android {
     compileSdk = libs.versions.sdk.compile.get().toInt()
-    buildToolsVersion = libs.versions.buildTools.get()
 
-    buildFeatures.compose = true
+    buildFeatures {
+        compose = true
+    }
 
     defaultConfig {
         applicationId = "com.mxalbert.sharedelements.demo"
@@ -35,12 +36,12 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
-        freeCompilerArgs = freeCompilerArgs + "-Xopt-in=kotlin.RequiresOptIn"
     }
 
     composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
     }
+    namespace = "com.mxalbert.sharedelements.demo"
 }
 
 dependencies {

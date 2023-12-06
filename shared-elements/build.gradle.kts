@@ -9,7 +9,6 @@ plugins {
 
 android {
     compileSdk = libs.versions.sdk.compile.get().toInt()
-    buildToolsVersion = libs.versions.buildTools.get()
 
     buildFeatures {
         buildConfig = false
@@ -36,6 +35,7 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
     }
+    namespace = "com.mxalbert.sharedelements"
 }
 
 dependencies {

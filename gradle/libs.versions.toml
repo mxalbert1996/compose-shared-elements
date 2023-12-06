@@ -1,17 +1,16 @@
 [versions]
-agp = "7.3.1"
+agp = "8.1.4"
 sdk-min = "21"
-sdk-target = "33"
-sdk-compile = "33"
-buildTools = "33.0.0"
+sdk-target = "34"
+sdk-compile = "34"
 maven-publish = "0.21.0"
-kotlin = "1.7.20"
-compose-compiler = "1.3.2"
-compose-bom = "2022.11.00"
-androidx-core = "1.9.0"
-androidx-activity = "1.6.1"
+kotlin = "1.9.20"
+compose-compiler = "1.5.4"
+compose-bom = "2023.10.01"
+androidx-core = "1.12.0"
+androidx-activity = "1.8.1"
 jUnit = "4.13.2"
-testExt = "1.1.4"
+testExt = "1.1.5"
 
 [libraries]
 kotlin-gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
