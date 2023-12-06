@@ -139,7 +139,8 @@ fun UserListRoot() {
         val listState = rememberLazyListState()
         Crossfade(
             targetState = selectedUser,
-            animationSpec = tween(durationMillis = TransitionDurationMillis)
+            animationSpec = tween(durationMillis = TransitionDurationMillis),
+            label = ""
         ) { user ->
             when {
                 user < 0 -> UserListScreen(listState)
